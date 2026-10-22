@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Legal Assistant Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,500;7..72,600&family=Noto+Serif+Bengali:wght@400;500&display=swap">
+<style>
+/* Supervisor console prototype. Sample data only; reports and lawyer requests made in index.html
+   in the same browser are read from localStorage so the demo shows the loop end to end. */
+:root {
+  --paper: #f4f6f2; --paper-2: #e4eae3; --white: #ffffff; --line: #d5ddd7; --row: #edf1ee;
+  --ink: #0d2a1c; --soft: #4f665a; --green: #006a4e; --green-2: #c9ddd1; --green-3: #e3f1ea; --green-ink: #00543e;
+  --accent: #c8102e; --accent-bg: #fbeef0; --amber: #8a5a00; --amber-bg: #fbf1dc;
+  --side-fg: #e6ede8; --side-soft: #9fb5a8; --side-hover: #173a2a; --side-active: #1f4835;
+  --ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --read: "Literata", Georgia, serif; --bn: "Noto Serif Bengali", "Literata", serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.5 var(--ui); }
+button, input, textarea, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:lang(bn), .bn { font-family: var(--bn); }
+:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+h1, h2, h3, p { margin: 0; }
+.tnum { font-variant-numeric: tabular-nums; }
+
+.app { display: grid; grid-template-columns: 250px minmax(0, 1fr); height: 100%; }
+.side { background: var(--ink); color: var(--side-fg); display: flex; flex-direction: column; padding: 12px 10px; padding-left: max(10px, env(safe-area-inset-left, 0px)); min-height: 0; }
+.brand { display: flex; align-items: center; gap: 10px; padding: 6px 8px 4px; font-weight: 600; font-size: 16px; }
+.brand small { display: block; font-weight: 400; font-size: 12px; color: var(--side-soft); }
+.logo { width: 36px; height: 36px; border-radius: 8px; background: #fff; object-fit: cover; }
+.side nav { display: grid; gap: 2px; margin-top: 18px; overflow-y: auto; }
+.nl { display: flex; gap: 10px; align-items: center; width: 100%; padding: 8px 10px; border: 0; border-radius: 8px; background: none; text-align: left; color: inherit; text-decoration: none; font-size: 14px; }
+.nl:hover { background: var(--side-hover); }
+.nl[aria-current="page"] { background: var(--side-active); }
+.nl .n { margin-left: auto; background: var(--accent); color: #fff; border-radius: 999px; font-size: 12px; padding: 1px 8px; font-weight: 600; }
+.lbl { font-size: 12px; color: var(--side-soft); padding: 14px 10px 4px; }
+.side .foot { margin-top: auto; border-top: 1px solid #23493a; padding: 10px 8px 2px; display: grid; gap: 8px; font-size: 13px; }
+.side .foot small { display: block; color: var(--side-soft); }
+.side .foot .who { display: flex; gap: 10px; align-items: center; }
+.av { width: 30px; height: 30px; border-radius: 50%; background: var(--green-2); color: var(--ink); display: grid; place-items: center; font-weight: 600; font-size: 12px; flex: none; }
+
+.main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.top { height: 52px; flex: none; display: flex; align-items: center; gap: 10px; padding: 0 max(16px, env(safe-area-inset-right, 0px)) 0 16px; border-bottom: 1px solid var(--line); font-size: 14px; color: var(--soft); }
+.menu-btn { display: none !important; }
+.view { flex: 1; overflow-y: auto; min-height: 0; }
+.page { max-width: 1180px; margin: 0 auto; padding: 28px 28px 56px; }
+.ph { display: flex; align-items: flex-end; gap: 12px 16px; flex-wrap: wrap; margin-bottom: 22px; }
+.ph h1 { font: 500 28px/1.2 var(--read); letter-spacing: -0.01em; }
+.ph p { width: 100%; color: var(--soft); font-size: 14px; margin-top: -6px; }
+.ph .right { margin-left: auto; display: flex; gap: 8px; }
+.ib { width: 34px; height: 34px; display: grid; place-items: center; border: 0; background: none; border-radius: 8px; color: var(--soft); }
+.ib:hover { background: var(--paper-2); color: var(--ink); }
+.btn { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--white); border-radius: 9px; padding: 7px 12px; font-size: 14px; white-space: nowrap; }
+.btn:hover { background: var(--paper); }
+.btn.pri { background: var(--green); color: #fff; border-color: var(--green); }
+.btn.pri:hover { background: #005a42; }
+.btn.danger { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn:disabled { opacity: .55; cursor: default; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; border-radius: 999px; padding: 2px 9px; white-space: nowrap; background: var(--paper-2); color: var(--soft); font-weight: 500; }
+.chip.ok { background: var(--green-3); color: var(--green-ink); }
+.chip.warn { background: var(--amber-bg); color: var(--amber); }
+.chip.bad { background: var(--accent-bg); color: var(--accent); }
+.chip.new { background: var(--ink); color: #fff; }
+.sample { margin-left: auto; }
+
+/* overview */
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.kpi { background: var(--white); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 4px; }
+.kpi span { font-size: 13px; color: var(--soft); }
+.kpi b { font: 500 30px/1.1 var(--read); letter-spacing: -0.01em; }
+.kpi small { font-size: 13px; color: var(--soft); }
+.kpi small .up { color: var(--green-ink); font-weight: 600; }
+.grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 12px; margin-top: 12px; }
+.card { background: var(--white); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; min-width: 0; }
+.card h2 { font-size: 15px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.card h2 .chip { margin-left: auto; }
+.todo { display: grid; }
+.todo button { display: flex; align-items: center; gap: 12px; border: 0; background: none; padding: 11px 4px; border-top: 1px solid var(--row); text-align: left; width: 100%; }
+.todo button:first-child { border-top: 0; }
+.todo button:hover { background: var(--paper); }
+.todo .c { font: 600 20px/1 var(--read); min-width: 34px; text-align: right; }
+.todo .t { flex: 1; } .todo .t small { display: block; color: var(--soft); font-size: 13px; }
+.bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; align-items: end; height: 190px; padding-top: 18px; }
+.bar { display: grid; gap: 6px; justify-items: center; align-self: stretch; grid-template-rows: 1fr auto; }
+.bar i { width: 100%; max-width: 46px; background: var(--green-2); border-radius: 6px 6px 0 0; align-self: end; position: relative; }
+.bar.today i { background: var(--green); }
+.bar i b { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font: 600 12px var(--ui); color: var(--soft); }
+.bar.today i b { color: var(--ink); }
+.bar span { font-size: 12px; color: var(--soft); }
+.split { display: flex; height: 12px; border-radius: 6px; overflow: hidden; margin: 6px 0 10px; }
+.split i:nth-child(1) { background: var(--green); } .split i:nth-child(2) { background: var(--green-2); } .split i:nth-child(3) { background: var(--accent); }
+.legend { display: grid; gap: 6px; font-size: 13px; }
+.legend div { display: flex; gap: 8px; align-items: center; } .legend div b { margin-left: auto; font-weight: 600; }
+.sw { width: 10px; height: 10px; border-radius: 3px; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 8px 14px; font-size: 14px; } .kv dt { color: var(--soft); } .kv dd { margin: 0; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+dl { margin: 0; }
+
+/* tables */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 16px; overflow-x: auto; }
+.tab { border: 0; background: none; padding: 9px 12px; font-size: 14px; color: var(--soft); border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--green); font-weight: 600; }
+.tbl-wrap { background: var(--white); border: 1px solid var(--line); border-radius: 14px; overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+td:first-child { white-space: nowrap; }
+th { text-align: left; font-weight: 600; font-size: 13px; color: var(--soft); padding: 10px 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 11px 14px; border-top: 1px solid var(--row); vertical-align: middle; }
+tr:first-child td { border-top: 0; }
+tbody tr.click { cursor: pointer; } tbody tr.click:hover { background: var(--paper); }
+td small { display: block; color: var(--soft); font-size: 13px; }
+.search { border: 1px solid var(--line); border-radius: 10px; background: var(--white); padding: 8px 12px; min-width: 260px; }
+
+/* two-pane queue */
+.pane { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 12px; align-items: start; }
+.qlist { background: var(--white); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.qi { display: grid; gap: 4px; width: 100%; text-align: left; border: 0; background: none; padding: 12px 14px; border-top: 1px solid var(--row); }
+.qi:first-child { border-top: 0; }
+.qi:hover { background: var(--paper); }
+.qi[aria-current="true"] { background: var(--green-3); }
+.qi .l1 { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--soft); }
+.qi .l1 .chip { font-size: 11px; }
+.qi .l1 time { margin-left: auto; }
+.qi b { font-weight: 500; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.detail { background: var(--white); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; display: grid; gap: 14px; min-width: 0; }
+.detail h2 { font: 600 20px/1.3 var(--read); }
+.detail .meta { font-size: 13px; color: var(--soft); display: flex; gap: 6px 14px; flex-wrap: wrap; }
+.blk { display: grid; gap: 6px; } .blk > span { font-size: 13px; color: var(--soft); font-weight: 600; }
+.quote { background: var(--paper); border-radius: 10px; padding: 12px 14px; font: 16px/1.65 var(--read); }
+.quote.user { font-family: var(--ui); font-size: 15px; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.detail textarea, .detail input, .detail select, .field input, .field select, .field textarea { border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; background: var(--paper); font-size: 14px; width: 100%; color: var(--ink); }
+.opt { display: flex; gap: 8px; align-items: center; font-size: 14px; } .opt input { accent-color: var(--green); width: auto; }
+.empty { color: var(--soft); padding: 28px 16px; text-align: center; }
+.diff { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.diff div { background: var(--paper); border-radius: 10px; padding: 12px; font-size: 14px; } .diff div b { display: block; font-size: 13px; color: var(--soft); margin-bottom: 6px; }
+.diff mark { background: var(--amber-bg); color: var(--amber); padding: 0 3px; border-radius: 3px; }
+
+/* settings + quality */
+.sec { background: var(--white); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; display: grid; gap: 14px; }
+.sec + .sec { margin-top: 12px; }
+.sec h2 { font-size: 16px; font-weight: 600; }
+.sec .hint { font-size: 13px; color: var(--soft); margin-top: -8px; }
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.field { display: grid; gap: 5px; font-size: 13px; color: var(--soft); }
+.line { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; font-size: 14px; }
+.line small { display: block; color: var(--soft); font-size: 13px; }
+.switch { position: relative; width: 42px; height: 24px; flex: none; }
+.switch input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.switch i { position: absolute; inset: 0; border-radius: 999px; background: var(--line); transition: .15s; pointer-events: none; }
+.switch i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: .15s; }
+.switch input:checked + i { background: var(--green); } .switch input:checked + i::after { left: 21px; }
+.switch input:focus-visible + i { outline: 2px solid var(--green); outline-offset: 2px; }
+.tags { display: flex; gap: 8px; flex-wrap: wrap; }
+.tag { display: inline-flex; gap: 6px; align-items: center; background: var(--accent-bg); color: var(--accent); border-radius: 999px; padding: 4px 6px 4px 12px; font-size: 13px; }
+.tag button { border: 0; background: none; color: inherit; width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; padding: 0; }
+.tag button:hover { background: rgba(200, 16, 46, .12); }
+.tag button svg { width: 14px; height: 14px; }
+.addtag { display: flex; gap: 8px; } .addtag input { max-width: 260px; }
+.save-row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; align-items: center; }
+.metrics { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.metric { background: var(--white); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: grid; gap: 6px; }
+.metric span { font-size: 13px; color: var(--soft); }
+.metric b { font: 500 28px/1.1 var(--read); }
+.metric .track { height: 6px; background: var(--paper-2); border-radius: 3px; position: relative; }
+.metric .track i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; background: var(--green); }
+.metric .track u { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); }
+.metric small { font-size: 12px; color: var(--soft); }
+.prog { height: 6px; background: var(--paper-2); border-radius: 3px; overflow: hidden; } .prog i { display: block; height: 100%; background: var(--green); width: 0; transition: width .3s; }
+
+dialog { border: 0; border-radius: 16px; padding: 0; width: min(480px, calc(100% - 32px)); box-shadow: 0 20px 60px rgba(13, 42, 28, .25); color: var(--ink); }
+dialog::backdrop { background: rgba(13, 42, 28, .45); }
+dialog form { padding: 20px; display: grid; gap: 12px; }
+dialog h3 { font: 600 20px/1.3 var(--read); }
+dialog .lead { font-size: 14px; color: var(--soft); }
+.f-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+.err { color: var(--accent); font-size: 13px; }
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); opacity: 0; background: var(--ink); color: var(--side-fg); padding: 10px 16px; border-radius: 10px; font-size: 14px; transition: .2s; pointer-events: none; z-index: 70; max-width: calc(100% - 32px); }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.scrim { display: none; }
+
+@media (max-width: 1080px) {
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .grid, .pane { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 860px) {
+  .app { grid-template-columns: 1fr; }
+  .side { position: fixed; inset: 0 auto 0 0; width: min(290px, 86vw); z-index: 40; transform: translateX(-102%); transition: transform .25s ease; }
+  .app.nav-open .side { transform: none; }
+  .app.nav-open .scrim { display: block; position: fixed; inset: 0; background: rgba(13, 42, 28, .45); z-index: 35; }
+  .menu-btn { display: grid !important; }
+  .page { padding: 20px 16px 40px; }
+  .g2, .diff { grid-template-columns: 1fr; }
+  .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .search { min-width: 0; width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .side, .toast, .switch i, .prog i { transition: none; } }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <aside class="side" id="side" aria-label="Admin navigation"></aside>
+  <div class="scrim" data-act="menu"></div>
+  <div class="main">
+    <header class="top"><button class="ib menu-btn" data-act="menu" aria-label="Open menu"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><span id="crumb">Admin console</span><span class="chip sample">Sample data</span></header>
+    <div class="view" id="view"></div>
+  </div>
+</div>
+<dialog id="dlg"></dialog>
+<input type="file" id="upfile" hidden accept=".pdf,image/*">
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  var I = {
+    home: 'M4 11l8-7 8 7v9h-5v-6H9v6H4z', inbox: 'M4 13l2-8h12l2 8v6H4zM4 13h5l1 2h4l1-2h5', book: 'M5 4h11a3 3 0 013 3v13H8a3 3 0 01-3-3zM5 17a3 3 0 013-3h11',
+    scale: 'M12 4v16M6 20h12M4 8h16M7 8l-3 6h6zM17 8l-3 6h6z', users: 'M9 11a4 4 0 100-8 4 4 0 000 8zM2 21v-1a6 6 0 0112 0v1M16 3.5a4 4 0 010 7M22 21v-1a6 6 0 00-4-5.6',
+    gear: 'M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 13a7.6 7.6 0 000-2l2-1.6-2-3.4-2.4 1a7.4 7.4 0 00-1.7-1L15 3.5h-4L10.7 6a7.4 7.4 0 00-1.7 1l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 000 2l-2 1.6 2 3.4 2.4-1a7.4 7.4 0 001.7 1l.3 2.5h4l.3-2.5a7.4 7.4 0 001.7-1l2.4 1 2-3.4z',
+    gauge: 'M4 18a8 8 0 1116 0M12 18l4-6', list: 'M8 6h12M8 12h12M8 18h12M4 6h.5M4 12h.5M4 18h.5', back: 'M19 12H5M11 6l-6 6 6 6',
+    upload: 'M12 16V4M7 9l5-5 5 5M4 16v4h16v-4', x: 'M6 6l12 12M18 6L6 18', check: 'M5 12l5 5 9-10', plus: 'M12 5v14M5 12h14', play: 'M7 5l12 7-12 7z'
+  };
+  function ic(n) { return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + I[n] + '"/></svg>'; }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function plural(n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); }
+  function initials(n) { return n.replace(/^(Adv|Prof|Dr)\.?\s+/, '').split(/\s+/).map(function (w) { return w[0]; }).slice(0, 2).join('').toUpperCase(); }
+  function fmt(n) { return n.toLocaleString('en-US'); }
+  var BN = /[ঀ-৿]/, $ = function (s) { return document.querySelector(s); };
+  var NOW = 'Sun 7 Mar 2027';
+  function when(iso) { try { var d = new Date(iso); return isNaN(d) ? iso : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ', ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }); } catch (e) { return iso; } }
+  var local = {}; try { local = JSON.parse(localStorage.getItem('la-demo') || '{}'); } catch (e) {}
+
+  var ADVOCATES = [{ name: 'Adv. Kamal Uddin', district: 'Dhaka', enrol: 'Dhaka Bar 4412' }, { name: 'Adv. Sharmin Sultana', district: 'Gazipur', enrol: 'Gazipur Bar 0931' }, { name: 'Adv. Mahbub Alam', district: 'Sylhet', enrol: 'Sylhet Bar 2207' }, { name: 'Adv. Nasima Begum', district: 'Chattogram', enrol: 'Chattogram Bar 1586' }];
+
+  // Week of 1-7 Mar 2027; the day counts add up to the weekly total, and the three outcomes add up to it too.
+  var WEEK = { days: [['Mon', 168], ['Tue', 201], ['Wed', 195], ['Thu', 210], ['Fri', 122], ['Sat', 176], ['Sun', 212]], last: 1102, cited: 1040, notfound: 180, handoff: 64,
+    topics: [['Registration of sale deeds', 312], ['Mutation (namjari)', 228], ['Pre-emption', 141], ['Land development tax', 118], ['Inheritance shares', 96]] };
+  var total = WEEK.days.reduce(function (a, d) { return a + d[1]; }, 0);
+  console.assert(total === WEEK.cited + WEEK.notfound + WEEK.handoff, 'outcomes must add up to the weekly total');
+
+  var D = {
+    view: 'overview', tab: {}, sel: {}, q: '',
+    reviews: [
+      { id: 'r1', src: 'User report', reason: 'Cites the wrong section', q: 'Is a gift deed (heba) of land valid without registration?', answer: 'A gift of immovable property must be made by a registered instrument (TPA 1882, s. 123), so an unregistered gift deed does not transfer the land.', note: 'For Muslim parties heba follows personal law; the answer should say so.', user: 'Tania Rahman', ws: 'Hossain & Associates', when: '2027-03-07T10:42' },
+      { id: 'r2', src: 'Citation check', reason: 'A citation was not in the search results; the answer was regenerated', q: 'What is the land development tax on agricultural land?', answer: 'Agricultural land up to a set ceiling is exempt from land development tax; above it, the rate per decimal applies as published by the Ministry of Land.', note: 'Automatic check. Confirm the regenerated answer cites the current rate schedule.', user: 'Rashed Karim', ws: 'Personal', when: '2027-03-07T09:15' },
+      { id: 'r3', src: 'User report', reason: 'The law has changed', q: 'How long does mutation take?', answer: 'Mutation is decided by the Assistant Commissioner (Land) after a hearing; the corpus does not fix a single time limit.', note: 'There is a new e-mutation circular with fixed days.', user: 'Imran Kabir', ws: 'Hossain & Associates', when: '2027-03-06T16:03' },
+      { id: 'r4', src: 'Refusal sample', reason: 'Weekly sample of "not found" answers', q: 'Can my employer cut my salary without notice?', answer: 'I could not find this in the law I have. The library covers land law for now. For this question, an advocate is the right person to ask.', note: 'Labour law is not in the corpus yet, so refusing is expected.', user: 'Sumaiya Islam', ws: 'Personal', when: '2027-03-06T11:20' },
+      { id: 'r5', src: 'User report', reason: 'Did not answer my question', q: 'ওয়ারিশ সনদ কোথায় পাব?', answer: 'আমার কাছে থাকা আইনে এই প্রশ্নের উত্তর খুঁজে পাইনি। এখন লাইব্রেরিতে ভূমি আইন আছে।', note: '', user: 'Abdul Halim', ws: 'Personal', when: '2027-03-05T19:48' }
+    ],
+    updates: [
+      { id: 'u1', act: 'State Acquisition and Tenancy Act, 1950', sec: 's. 96', what: 'Wording of a sub-section changed', found: 'bdlaws nightly check · 6 Mar 2027', from: '6 Mar 2027' },
+      { id: 'u2', act: 'Ministry of Land circular on e-mutation', sec: 'New document', what: 'Uploaded from the Gazette · OCR done, Bijoy text converted', found: 'Uploaded by supervisor · 5 Mar 2027', from: '5 Mar 2027' },
+      { id: 'u3', act: 'Registration Act, 1908', sec: 's. 17', what: 'Footnote added to the section', found: 'bdlaws nightly check · 4 Mar 2027', from: '4 Mar 2027' }
+    ],
+    acts: [
+      ['Constitution of the People\'s Republic of Bangladesh', 'Constitution', 6, '7 Mar 2027'], ['State Acquisition and Tenancy Act, 1950', 'Land', 9, '7 Mar 2027'], ['Transfer of Property Act, 1882', 'Land', 4, '7 Mar 2027'],
+      ['Registration Act, 1908', 'Land', 7, '7 Mar 2027'], ['Non-Agricultural Tenancy Act, 1949', 'Land', 3, '7 Mar 2027'], ['Ministry of Land circulars (42 documents)', 'Land', 42, '5 Mar 2027']
+    ],
+    areas: [{ name: 'Land', state: 'Live', on: true }, { name: 'Tenancy', state: 'Being prepared', on: false }, { name: 'Succession', state: 'Planned', on: false }],
+    uploads: [],
+    handoffs: [
+      { ref: 'LA-1031', q: 'Tenant refuses to leave after the lease ended', district: 'Dhaka', contact: 'phone', user: 'Delta Garments', ws: 'Business', when: '2027-03-07T08:30', status: 'New' },
+      { ref: 'LA-1029', q: 'My brother was arrested; the bail hearing is tomorrow', district: 'Narayanganj', contact: 'phone', user: 'Nadia Sultana', ws: 'Personal', when: '2027-03-06T21:10', status: 'New', urgent: true },
+      { ref: 'LA-1027', q: 'Neighbour built a wall on our side of the boundary', district: 'Gazipur', contact: 'email', user: 'Rashed Karim', ws: 'Personal', when: '2027-03-06T13:05', status: 'New' },
+      { ref: 'LA-1024', q: 'Boundary dispute with neighbour after survey', district: 'Gazipur', contact: 'phone', user: 'Mizanur Rahman', ws: 'Personal', when: '2027-03-04T10:00', status: 'Assigned', advocate: 'Adv. Sharmin Sultana' },
+      { ref: 'LA-1019', q: 'Sister denied share of father\'s land', district: 'Sylhet', contact: 'phone', user: 'Abdul Halim', ws: 'Personal', when: '2027-03-02T17:40', status: 'Done', advocate: 'Adv. Mahbub Alam' }
+    ],
+    users: [
+      ['Farhana Akter', 'Advocate', 'Hossain & Associates', 'Today', 'Active'], ['Rafiq Hossain', 'Advocate', 'Hossain & Associates', 'Today', 'Active'], ['Tania Rahman', 'Law firm staff', 'Hossain & Associates', 'Today', 'Active'],
+      ['Imran Kabir', 'Advocate', 'Hossain & Associates', 'Yesterday', 'Active'], ['Delta Garments (HR)', 'Business', 'Delta Garments', '5 Mar', 'Active'], ['Rashed Karim', 'Individual', 'Personal', 'Today', 'Active'],
+      ['Sumaiya Islam', 'Individual', 'Personal', '6 Mar', 'Active'], ['Abdul Halim', 'Individual', 'Personal', '5 Mar', 'Active'], ['Unknown sender', 'Individual', 'Personal', '28 Feb', 'Suspended']
+    ],
+    workspaces: [['Hossain & Associates', 'Law firm', 5, 3, '12 Jan 2027'], ['Delta Garments', 'Business', 2, 1, '3 Feb 2027'], ['Rahman Legal Chambers', 'Law firm', 3, 7, '20 Jan 2027'], ['Karim Enterprises Ltd.', 'Business', 1, 0, '1 Mar 2027']],
+    settings: { disclaimer: 'General legal information, not legal advice. The law shown is as held on the corpus date.', showDate: true, style: 'simple', bn: true, en: true, fallback: false, limit: 100,
+      topics: ['Criminal charges', 'Arrest or bail', 'Court deadlines', 'Family violence', 'Anything urgent'] },
+    runs: [
+      { date: '6 Mar 2027', r: 87, c: 100, f: 93, a: 84, p: 3, by: 'Nightly' },
+      { date: '27 Feb 2027', r: 86, c: 100, f: 91, a: 82, p: 4, by: 'Settings change' },
+      { date: '20 Feb 2027', r: 83, c: 100, f: 90, a: 81, p: 4, by: 'Corpus update' }
+    ],
+    audit: [
+      ['6 Mar 2027, 02:14', 'System', 'Nightly law check found 1 change (SA&T Act s. 96)'], ['5 Mar 2027, 15:32', 'Supervisor', 'Uploaded Ministry of Land circular on e-mutation'],
+      ['4 Mar 2027, 11:05', 'Supervisor', 'Assigned LA-1024 to Adv. Sharmin Sultana'], ['27 Feb 2027, 10:20', 'Supervisor', 'Changed default answer style to Simple'],
+      ['27 Feb 2027, 10:21', 'System', 'Quality check passed after settings change'], ['20 Feb 2027, 09:00', 'System', 'Quality check failed: retrieval 83% (bar 85%); release held']
+    ]
+  };
+  // reports and lawyer requests made in the assistant demo, newest first
+  (local.flags || []).forEach(function (f, i) { D.reviews.unshift({ id: 'l' + i, src: 'User report', reason: f.reason, q: f.q, answer: f.answer, note: f.note, user: f.user, ws: f.ws, when: f.when, fresh: true }); });
+  (local.handoffs || []).forEach(function (h) { D.handoffs.unshift({ ref: h.ref, q: h.q, district: h.district, contact: h.contact, user: h.user, ws: h.ws, when: h.when, status: 'New', fresh: true }); });
+  var BARS = { r: 85, c: 100, f: 90, a: 80, p: 5 };
+  function passes(x) { return x.r >= BARS.r && x.c >= BARS.c && x.f >= BARS.f && x.a >= BARS.a && x.p <= BARS.p; }
+
+  function openReviews() { return D.reviews.filter(function (r) { return !r.done; }); }
+  function newHandoffs() { return D.handoffs.filter(function (h) { return h.status === 'New'; }); }
+  function log(what) { var d = new Date(); D.audit.unshift([when(d.toISOString()), 'Supervisor', what]); }
+
+  var NAV = [
+    ['overview', 'home', 'Overview'], ['reviews', 'inbox', 'Review queue', function () { return openReviews().length; }],
+    ['library', 'book', 'Law library', function () { return D.updates.length; }], ['handoffs', 'scale', 'Lawyer requests', function () { return newHandoffs().length; }],
+    ['people', 'users', 'Users and workspaces'], ['settings', 'gear', 'Assistant settings'], ['quality', 'gauge', 'Quality checks'], ['audit', 'list', 'Audit log']
+  ];
+  function renderSide() {
+    $('#side').innerHTML = '<div class="brand"><img class="logo" src="logo.png" alt=""><span>Legal Assistant<small>Admin console</small></span></div><nav>'
+      + NAV.map(function (n) { var c = n[3] ? n[3]() : 0; return '<button class="nl" data-act="nav" data-v="' + n[0] + '"' + (D.view === n[0] ? ' aria-current="page"' : '') + '>' + ic(n[1]) + n[2] + (c ? '<span class="n">' + c + '</span>' : '') + '</button>'; }).join('')
+      + '</nav><div class="foot"><div class="who"><span class="av">SV</span><span>Supervisor<small>admin@legalassistant.example</small></span></div><a class="nl" href="index.html">' + ic('back') + 'Open the assistant</a></div>';
+  }
+
+  function tabs(key, list) {
+    var cur = D.tab[key] || list[0][0];
+    return '<div class="tabs" role="tablist">' + list.map(function (t) { return '<button class="tab" role="tab" data-act="tab" data-k="' + key + '" data-t="' + t[0] + '" aria-selected="' + (t[0] === cur) + '">' + t[1] + '</button>'; }).join('') + '</div>';
+  }
+  function curTab(key, def) { return D.tab[key] || def; }
+  function head(title, sub, right) { return '<div class="ph"><h1>' + title + '</h1>' + (right ? '<div class="right">' + right + '</div>' : '') + (sub ? '<p>' + sub + '</p>' : '') + '</div>'; }
+  function sw(idv, on, label) { return '<label class="switch"><input type="checkbox" id="' + idv + '"' + (on ? ' checked' : '') + ' aria-label="' + esc(label) + '"><i></i></label>'; }
+  function fld(label, input) { return '<label class="field">' + label + input + '</label>'; }
+
+  var V = {};
+  V.overview = function () {
+    var max = Math.max.apply(null, WEEK.days.map(function (d) { return d[1]; })), pct = function (n) { return Math.round(n / total * 100); };
+    var ch = Math.round((total - WEEK.last) / WEEK.last * 1000) / 10;
+    var lastRun = D.runs[0];
+    return head('Overview', 'Week of 1–7 March 2027. What the assistant answered, and what is waiting for you.')
+      + '<div class="kpis tnum">'
+      + '<div class="kpi"><span>Questions this week</span><b>' + fmt(total) + '</b><small><span class="up">+' + ch + '%</span> on last week (' + fmt(WEEK.last) + ')</small></div>'
+      + '<div class="kpi"><span>Answered with citations</span><b>' + pct(WEEK.cited) + '%</b><small>' + fmt(WEEK.cited) + ' of ' + fmt(total) + ' questions</small></div>'
+      + '<div class="kpi"><span>Not found, referred on</span><b>' + pct(WEEK.notfound) + '%</b><small>' + WEEK.notfound + ' questions outside the law held</small></div>'
+      + '<div class="kpi"><span>Urgent, sent to a lawyer</span><b>' + pct(WEEK.handoff) + '%</b><small>' + WEEK.handoff + ' questions on criminal or urgent topics</small></div></div>'
+      + '<div class="grid"><section class="card"><h2>Waiting for you</h2><div class="todo">'
+      + todo('reviews', openReviews().length, 'answers to review', 'Reported by users or caught by the automatic checks')
+      + todo('library', D.updates.length, 'law updates to approve', 'Users keep getting the current version until you approve')
+      + todo('handoffs', newHandoffs().length, 'lawyer requests to assign', newHandoffs().some(function (h) { return h.urgent; }) ? 'One is marked urgent' : 'Match each to an advocate in the district')
+      + '<button data-act="nav" data-v="quality"><span class="c">' + (passes(lastRun) ? ic('check') : '!') + '</span><span class="t">Last quality check ' + (passes(lastRun) ? 'passed' : 'failed') + '<small>' + lastRun.date + ' · retrieval ' + lastRun.r + '%, correct ' + lastRun.a + '%</small></span></button>'
+      + '</div></section>'
+      + '<section class="card"><h2>How questions ended</h2><div class="split" aria-hidden="true"><i style="width:' + (WEEK.cited / total * 100) + '%"></i><i style="width:' + (WEEK.notfound / total * 100) + '%"></i><i style="width:' + (WEEK.handoff / total * 100) + '%"></i></div>'
+      + '<div class="legend tnum"><div><span class="sw" style="background:var(--green)"></span>Answered with citations<b>' + fmt(WEEK.cited) + '</b></div><div><span class="sw" style="background:var(--green-2)"></span>Not found in the law held<b>' + WEEK.notfound + '</b></div><div><span class="sw" style="background:var(--accent)"></span>Urgent, lawyer handoff<b>' + WEEK.handoff + '</b></div></div>'
+      + '<h2 style="margin:20px 0 10px">Most asked topics</h2><div class="legend tnum">' + WEEK.topics.map(function (t) { return '<div>' + t[0] + '<b>' + t[1] + '</b></div>'; }).join('') + '</div></section></div>'
+      + '<div class="grid"><section class="card"><h2>Questions per day</h2><div class="bars tnum">' + WEEK.days.map(function (d, i) { return '<div class="bar' + (i === 6 ? ' today' : '') + '"><i style="height:' + (d[1] / max * 100) + '%"><b>' + d[1] + '</b></i><span>' + d[0] + '</span></div>'; }).join('') + '</div></section>'
+      + '<section class="card"><h2>System</h2><dl class="kv"><dt>Assistant</dt><dd><span class="chip ok">Running</span>Qwen3.6-27B, self-hosted</dd><dt>Law search</dt><dd><span class="chip ok">Running</span></dd>'
+      + '<dt>Nightly law check</dt><dd>7 Mar, 02:00 · ' + plural(D.updates.filter(function (u) { return /nightly/.test(u.found); }).length, 'change') + ' waiting</dd><dt>Paid API fallback</dt><dd>' + (D.settings.fallback ? '<span class="chip warn">On</span>' : '<span class="chip">Off</span>') + '</dd><dt>Law shown to users</dt><dd>As held on 1 Mar 2027</dd></dl></section></div>';
+  };
+  function todo(v, n, what, sub) { return '<button data-act="nav" data-v="' + v + '"><span class="c tnum">' + n + '</span><span class="t">' + (n ? what : what.replace(/^/, 'No ')) + '<small>' + sub + '</small></span></button>'; }
+
+  V.reviews = function () {
+    var t = curTab('reviews', 'open'), list = D.reviews.filter(function (r) { return t === 'open' ? !r.done : r.done; });
+    var sel = D.reviews.find(function (r) { return r.id === D.sel.review; }) || list[0];
+    var h = head('Review queue', 'Answers users reported, plus the ones the automatic checks caught. Your corrections become reference questions, so the same mistake is tested before every release.')
+      + tabs('reviews', [['open', 'To review (' + openReviews().length + ')'], ['done', 'Done (' + (D.reviews.length - openReviews().length) + ')']]);
+    if (!list.length) return h + '<div class="card empty">' + (t === 'open' ? 'Nothing to review. New reports appear here.' : 'Reviewed answers appear here.') + '</div>';
+    h += '<div class="pane"><div class="qlist">' + list.map(function (r) {
+      return '<button class="qi" data-act="pick" data-k="review" data-id="' + r.id + '" aria-current="' + (sel && r.id === sel.id) + '"><span class="l1"><span class="chip ' + (r.src === 'User report' ? 'bad' : r.src === 'Citation check' ? 'warn' : '') + '">' + r.src + '</span>' + (r.fresh ? '<span class="chip new">From the demo</span>' : '') + '<time>' + when(r.when) + '</time></span><b' + (BN.test(r.q) ? ' class="bn"' : '') + '>' + esc(r.q) + '</b><span class="l1">' + esc(r.reason) + '</span></button>';
+    }).join('') + '</div>';
+    if (sel && list.indexOf(sel) > -1) {
+      h += '<div class="detail"><h2' + (BN.test(sel.q) ? ' class="bn"' : '') + '>' + esc(sel.q) + '</h2><div class="meta"><span>' + esc(sel.user) + ' · ' + esc(sel.ws) + '</span><span>' + when(sel.when) + '</span><span class="chip">' + esc(sel.reason) + '</span></div>'
+        + '<div class="blk"><span>Answer the user saw</span><div class="quote' + (BN.test(sel.answer) ? ' bn' : '') + '">' + esc(sel.answer) + '</div></div>'
+        + (sel.note ? '<div class="blk"><span>Note</span><div class="quote user">' + esc(sel.note) + '</div></div>' : '');
+      if (sel.done) h += '<div class="blk"><span>Outcome</span><div><span class="chip ok">' + esc(sel.done) + '</span></div>' + (sel.fix ? '<div class="quote">' + esc(sel.fix) + '</div>' : '') + '</div>';
+      else h += '<div class="blk"><span>Corrected answer (optional)</span><textarea id="fix" rows="4" placeholder="Write the answer it should have given, with the Act and section."></textarea><label class="opt"><input type="checkbox" id="addref" checked>Add to the reference questions</label></div>'
+        + '<div class="actions"><button class="btn pri" data-act="review-fix" data-id="' + sel.id + '">' + ic('check') + 'Save correction</button><button class="btn" data-act="review-ok" data-id="' + sel.id + '">Answer was right</button></div>';
+      h += '</div>';
+    }
+    return h + '</div>';
+  };
+
+  V.library = function () {
+    var t = curTab('library', 'updates'), h = head('Law library', 'The law the assistant answers from. Nothing changes for users until you approve it, and old versions are kept so dated questions still work.', '<button class="btn pri" data-act="upload">' + ic('upload') + 'Add a document</button>')
+      + tabs('library', [['updates', 'Updates to approve (' + D.updates.length + ')'], ['acts', 'Acts and documents'], ['areas', 'Areas of law']]);
+    if (t === 'updates') {
+      var up = D.updates.concat(D.uploads.filter(function (u) { return u.busy; }));
+      if (!up.length) return h + '<div class="card empty">No updates waiting. The nightly check runs at 02:00.</div>';
+      var sel = D.updates.find(function (u) { return u.id === D.sel.update; }) || D.updates[0];
+      h += '<div class="pane"><div class="qlist">' + up.map(function (u) {
+        return u.busy ? '<div class="qi"><span class="l1"><span class="chip warn">Processing</span></span><b>' + esc(u.name) + '</b><span class="l1">' + esc(u.step) + '</span><div class="prog"><i style="width:' + u.pct + '%"></i></div></div>'
+          : '<button class="qi" data-act="pick" data-k="update" data-id="' + u.id + '" aria-current="' + (sel && u.id === sel.id) + '"><span class="l1"><span class="chip">' + esc(u.sec) + '</span><time>' + esc(u.from) + '</time></span><b>' + esc(u.act) + '</b><span class="l1">' + esc(u.what) + '</span></button>';
+      }).join('') + '</div>';
+      if (sel) h += '<div class="detail"><h2>' + esc(sel.act) + ' · ' + esc(sel.sec) + '</h2><div class="meta"><span>' + esc(sel.found) + '</span></div>'
+        + (sel.sec === 'New document' ? '<div class="quote user">The document is split into sections, checked for old Bijoy text, and indexed. Approving makes it searchable and citable for users.</div>'
+          : '<div class="diff"><div><b>In force now</b>Section text from bdlaws. The changed words are <mark>highlighted</mark> in the real product.</div><div><b>New version</b>Same section with the <mark>new wording</mark> as detected by the nightly check.</div></div>')
+        + fld('In force from', '<input id="valid-from" value="' + esc(sel.from) + '">')
+        + '<div class="actions"><button class="btn pri" data-act="approve" data-id="' + sel.id + '">' + ic('check') + 'Approve and publish</button><button class="btn" data-act="reject" data-id="' + sel.id + '">Reject</button></div></div>';
+      return h + '</div>';
+    }
+    if (t === 'acts') return h + '<div class="tbl-wrap"><table><thead><tr><th>Act or document</th><th>Area</th><th>Versions kept</th><th>Last checked</th></tr></thead><tbody>'
+      + D.acts.map(function (a) { return '<tr><td>' + esc(a[0]) + '</td><td>' + a[1] + '</td><td class="tnum">' + a[2] + '</td><td>' + a[3] + '</td></tr>'; }).join('') + '</tbody></table></div>';
+    return h + '<div class="sec">' + D.areas.map(function (a, i) {
+      return '<div class="line"><span>' + a.name + '<small>' + a.state + '</small></span>' + sw('area' + i, a.on, 'Answer ' + a.name + ' questions') + '</div>';
+    }).join('') + '<p class="hint" style="margin:0">Turning an area on lets the assistant answer from it. Turn it on only after its quality check passes.</p></div>';
+  };
+
+  V.handoffs = function () {
+    var t = curTab('handoffs', 'New'), list = D.handoffs.filter(function (x) { return x.status === t; });
+    var sel = D.handoffs.find(function (x) { return x.ref === D.sel.handoff; }) || list[0];
+    var h = head('Lawyer requests', 'Users who asked to talk to a lawyer. They agreed to share the question below with an advocate.')
+      + tabs('handoffs', ['New', 'Assigned', 'Done'].map(function (s) { return [s, s + ' (' + D.handoffs.filter(function (x) { return x.status === s; }).length + ')']; }));
+    if (!list.length) h += '<div class="card empty">No ' + t.toLowerCase() + ' requests.</div>';
+    else {
+      h += '<div class="pane"><div class="qlist">' + list.map(function (x) {
+        return '<button class="qi" data-act="pick" data-k="handoff" data-id="' + x.ref + '" aria-current="' + (sel && x.ref === sel.ref) + '"><span class="l1"><span class="chip">' + x.ref + '</span>' + (x.urgent ? '<span class="chip bad">Urgent</span>' : '') + (x.fresh ? '<span class="chip new">From the demo</span>' : '') + '<time>' + when(x.when) + '</time></span><b' + (BN.test(x.q) ? ' class="bn"' : '') + '>' + esc(x.q) + '</b><span class="l1">' + esc(x.district) + ' · ' + esc(x.user) + '</span></button>';
+      }).join('') + '</div>';
+      if (sel && list.indexOf(sel) > -1) {
+        var near = ADVOCATES.filter(function (a) { return a.district === sel.district; });
+        h += '<div class="detail"><h2' + (BN.test(sel.q) ? ' class="bn"' : '') + '>' + esc(sel.q) + '</h2><div class="meta"><span>' + sel.ref + '</span><span>' + esc(sel.user) + ' · ' + esc(sel.ws) + '</span><span>' + esc(sel.district) + '</span><span>Contact by ' + esc(sel.contact) + '</span></div>'
+          + (sel.urgent ? '<div class="quote user">Marked urgent: criminal topic with a hearing date. Assign today.</div>' : '');
+        if (sel.status === 'New') h += fld('Assign to', '<select id="adv">' + ADVOCATES.map(function (a) { return '<option' + (a.district === sel.district ? ' selected' : '') + '>' + esc(a.name) + ' · ' + a.district + '</option>'; }).join('') + '</select>')
+          + (near.length ? '' : '<p class="hint" style="font-size:13px;color:var(--soft)">No panel advocate in ' + esc(sel.district) + ' yet; pick the nearest.</p>')
+          + '<div class="actions"><button class="btn pri" data-act="assign" data-id="' + sel.ref + '">Assign advocate</button></div>';
+        else h += '<div class="blk"><span>Advocate</span><div>' + esc(sel.advocate) + '</div></div>' + (sel.status === 'Assigned' ? '<div class="actions"><button class="btn" data-act="handoff-done" data-id="' + sel.ref + '">' + ic('check') + 'Mark as done</button></div>' : '');
+        h += '</div>';
+      }
+      h += '</div>';
+    }
+    return h + '<section class="card" style="margin-top:12px"><h2>Advocate panel <button class="btn" data-act="add-adv" style="margin-left:auto">' + ic('plus') + 'Add advocate</button></h2><div class="tbl-wrap" style="border:0"><table><thead><tr><th>Advocate</th><th>District</th><th>Enrolment</th><th>Open requests</th></tr></thead><tbody>'
+      + ADVOCATES.map(function (a) { return '<tr><td>' + esc(a.name) + '</td><td>' + esc(a.district) + '</td><td>' + esc(a.enrol) + '</td><td class="tnum">' + D.handoffs.filter(function (x) { return x.status === 'Assigned' && x.advocate === a.name; }).length + '</td></tr>'; }).join('') + '</tbody></table></div></section>';
+  };
+
+  V.people = function () {
+    var t = curTab('people', 'users'), q = D.q.toLowerCase();
+    var h = head('Users and workspaces', '1,930 accounts, 412 active this week. Firms manage their own members; you step in for suspensions, resets and disputes.', '<input class="search" id="q" type="search" placeholder="Search by name or workspace" aria-label="Search users" value="' + esc(D.q) + '">')
+      + tabs('people', [['users', 'Users'], ['ws', 'Workspaces']]);
+    if (t === 'users') {
+      var rows = D.users.filter(function (u) { return (u[0] + ' ' + u[2]).toLowerCase().indexOf(q) > -1; });
+      return h + '<div class="tbl-wrap"><table><thead><tr><th>Name</th><th>Uses it as</th><th>Workspace</th><th>Last active</th><th>Status</th><th></th></tr></thead><tbody>'
+        + (rows.length ? rows.map(function (u) { var i = D.users.indexOf(u); return '<tr><td><span style="display:flex;gap:10px;align-items:center"><span class="av">' + initials(u[0]) + '</span>' + esc(u[0]) + '</span></td><td>' + u[1] + '</td><td>' + esc(u[2]) + '</td><td>' + u[3] + '</td><td><span class="chip ' + (u[4] === 'Active' ? 'ok' : 'bad') + '">' + u[4] + '</span></td><td style="text-align:right;white-space:nowrap"><button class="btn" data-act="reset" data-i="' + i + '">Reset password</button> <button class="btn" data-act="suspend" data-i="' + i + '">' + (u[4] === 'Active' ? 'Suspend' : 'Restore') + '</button></td></tr>'; }).join('')
+          : '<tr><td colspan="6" class="empty">No user matches that search.</td></tr>') + '</tbody></table></div>';
+    }
+    var ws = D.workspaces.filter(function (w) { return w[0].toLowerCase().indexOf(q) > -1; });
+    return h + '<div class="tbl-wrap"><table><thead><tr><th>Workspace</th><th>Type</th><th>Members</th><th>Matters</th><th>Created</th></tr></thead><tbody>'
+      + (ws.length ? ws.map(function (w) { return '<tr><td>' + esc(w[0]) + '</td><td>' + w[1] + '</td><td class="tnum">' + w[2] + '</td><td class="tnum">' + w[3] + '</td><td>' + w[4] + '</td></tr>'; }).join('') : '<tr><td colspan="5" class="empty">No workspace matches that search.</td></tr>')
+      + '</tbody></table></div><p style="font-size:13px;color:var(--soft);margin-top:10px">You see counts only. Matter files and chats stay private to each workspace.</p>';
+  };
+
+  V.settings = function () {
+    var s = D.settings;
+    return head('Assistant settings', 'How the assistant answers. Every change is checked against the 150 reference questions before it goes live.')
+      + '<form id="settings-form"><section class="sec"><h2>Answers</h2>'
+      + fld('Disclaimer under every answer', '<textarea id="st-disc" rows="2">' + esc(s.disclaimer) + '</textarea>')
+      + '<div class="line"><span>Show the corpus date on answers<small>Users see which date the law is current to.</small></span>' + sw('st-date', s.showDate, 'Show the corpus date') + '</div>'
+      + '<div class="g2">' + fld('Default answer style for new users', '<select id="st-style"><option value="simple"' + (s.style === 'simple' ? ' selected' : '') + '>Simple</option><option value="pro"' + (s.style === 'pro' ? ' selected' : '') + '>Professional</option></select>')
+      + fld('Questions per user per day', '<input id="st-limit" type="number" min="10" max="1000" value="' + s.limit + '">') + '</div>'
+      + '<div class="line"><span>Bangla</span>' + sw('st-bn', s.bn, 'Answer in Bangla') + '</div><div class="line"><span>English</span>' + sw('st-en', s.en, 'Answer in English') + '</div></section>'
+      + '<section class="sec"><h2>Send to a lawyer instead of answering</h2><p class="hint">Questions on these topics get the lawyer handoff, not general information.</p><div class="tags">'
+      + s.topics.map(function (t, i) { return '<span class="tag">' + esc(t) + '<button type="button" data-act="rm-topic" data-i="' + i + '" aria-label="Remove ' + esc(t) + '">' + ic('x') + '</button></span>'; }).join('')
+      + '</div><div class="addtag"><input id="new-topic" placeholder="Add a topic, e.g. Eviction notice" aria-label="New topic" style="border:1px solid var(--line);border-radius:9px;padding:8px 11px;background:var(--paper)"><button type="button" class="btn" data-act="add-topic">' + ic('plus') + 'Add</button></div></section>'
+      + '<section class="sec"><h2>Model</h2><div class="line"><span>Main model<small>Qwen3.6-27B on the GPU server. Data stays on your servers.</small></span><span class="chip ok">Running</span></div>'
+      + '<div class="line"><span>Paid API when the server is busy<small>Off keeps every question on your own server.</small></span>' + sw('st-fb', s.fallback, 'Use the paid API when busy') + '</div></section>'
+      + '<div class="save-row"><span id="save-state" style="font-size:13px;color:var(--soft)"></span><button type="submit" class="btn pri">Check and save</button></div></form>';
+  };
+
+  V.quality = function () {
+    var x = D.runs[0], m = [['r', 'Right section in top 5', '%', 'at least ' + BARS.r + '%'], ['c', 'Citations valid', '%', 'must be 100%'], ['f', 'Refuses out-of-scope', '%', 'at least ' + BARS.f + '%'], ['a', 'Answers graded correct', '%', 'at least ' + BARS.a + '%, 0 dangerous'], ['p', 'Bangla vs English gap', ' pts', 'at most ' + BARS.p + ' pts']];
+    return head('Quality checks', '150 reference questions, signed off by the client, run before every release and after every change. A failed check holds the release.', '<button class="btn pri" data-act="run" id="run-btn">' + ic('play') + 'Run now</button>')
+      + '<div class="prog" id="run-prog" hidden style="margin-bottom:12px"><i></i></div>'
+      + '<div class="metrics tnum">' + m.map(function (k) {
+        var v = x[k[0]], ok = k[0] === 'p' ? v <= BARS.p : v >= BARS[k[0]];
+        var w = k[0] === 'p' ? Math.min(100, v / 10 * 100) : v, bar = k[0] === 'p' ? BARS.p * 10 : BARS[k[0]];
+        return '<div class="metric"><span>' + k[1] + '</span><b>' + v + k[2] + '</b><div class="track"><i style="width:' + w + '%;background:' + (ok ? 'var(--green)' : 'var(--accent)') + '"></i><u style="left:' + bar + '%"></u></div><small>' + (ok ? 'Passes: ' : 'Fails: ') + k[3] + '</small></div>';
+      }).join('') + '</div>'
+      + '<div class="tbl-wrap" style="margin-top:12px"><table><thead><tr><th>Run</th><th>Why it ran</th><th>Top 5</th><th>Citations</th><th>Refusal</th><th>Correct</th><th>BN/EN gap</th><th>Result</th></tr></thead><tbody>'
+      + D.runs.map(function (r) { return '<tr><td>' + r.date + '</td><td>' + esc(r.by) + '</td><td class="tnum">' + r.r + '%</td><td class="tnum">' + r.c + '%</td><td class="tnum">' + r.f + '%</td><td class="tnum">' + r.a + '%</td><td class="tnum">' + r.p + ' pts</td><td>' + (passes(r) ? '<span class="chip ok">Passed</span>' : '<span class="chip bad">Held release</span>') + '</td></tr>'; }).join('')
+      + '</tbody></table></div>';
+  };
+
+  V.audit = function () {
+    return head('Audit log', 'Every change to the law, the settings and user accounts, with who made it.')
+      + '<div class="tbl-wrap"><table><thead><tr><th>When</th><th>Who</th><th>What</th></tr></thead><tbody>'
+      + D.audit.map(function (a) { return '<tr><td style="white-space:nowrap">' + esc(a[0]) + '</td><td>' + esc(a[1]) + '</td><td>' + esc(a[2]) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+  };
+
+  function render() {
+    renderSide();
+    var n = NAV.find(function (x) { return x[0] === D.view; });
+    $('#crumb').textContent = 'Admin console / ' + n[2];
+    $('#view').innerHTML = '<div class="page">' + V[D.view]() + '</div>';
+  }
+  function go(v) { D.view = v; $('#app').classList.remove('nav-open'); $('#view').scrollTop = 0; render(); }
+  var tt; function toast(msg) { var t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(tt); tt = setTimeout(function () { t.classList.remove('show'); }, 2800); }
+  function modal(o) {
+    var d = $('#dlg');
+    d.innerHTML = '<form id="mf" novalidate><h3>' + esc(o.title) + '</h3>' + o.body + '<p class="err" id="merr" hidden></p><div class="f-actions"><button type="button" class="btn" data-act="close-dlg">Cancel</button><button type="submit" class="btn ' + (o.danger ? 'danger' : 'pri') + '">' + esc(o.submit) + '</button></div></form>';
+    d.showModal(); var first = d.querySelector('input, textarea, select'); if (first) first.focus();
+    $('#mf').onsubmit = function (e) { e.preventDefault(); var err = o.onSubmit(); if (err) { $('#merr').textContent = err; $('#merr').hidden = false; } else d.close(); };
+  }
+  function runCheck(by, done) {
+    var btn = $('#run-btn'), p = $('#run-prog'), k = 0;
+    if (btn) btn.disabled = true; if (p) p.hidden = false;
+    (function step() {
+      k += 10; var bar = $('#run-prog i'); if (bar) bar.style.width = k + '%';
+      if (k < 100) { setTimeout(step, 180); return; }
+      var x = D.runs[0], r = { date: '7 Mar 2027', by: by, r: Math.min(95, x.r + 1), c: 100, f: x.f, a: Math.min(95, x.a + 1), p: Math.max(1, x.p - 1) };
+      D.runs.unshift(r); D.audit.unshift([when(new Date().toISOString()), 'System', 'Quality check ' + (passes(r) ? 'passed' : 'failed') + ' (' + by.toLowerCase() + ')']);
+      if (done) done(r); else { render(); toast(passes(r) ? 'Quality check passed. All five bars met.' : 'Quality check failed. The release is held.'); }
+    })();
+  }
+
+  var A = {
+    nav: function (b) { go(b.dataset.v); },
+    menu: function () { $('#app').classList.toggle('nav-open'); },
+    tab: function (b) { D.tab[b.dataset.k] = b.dataset.t; render(); },
+    pick: function (b) { D.sel[b.dataset.k] = b.dataset.id; render(); },
+    'close-dlg': function () { $('#dlg').close(); },
+    'review-ok': function (b) { var r = D.reviews.find(function (x) { return x.id === b.dataset.id; }); r.done = 'Kept as is'; log('Reviewed "' + r.q + '": answer kept'); D.sel.review = null; render(); toast('Marked as right. ' + plural(openReviews().length, 'answer') + ' left to review.'); },
+    'review-fix': function (b) {
+      var r = D.reviews.find(function (x) { return x.id === b.dataset.id; }), fix = $('#fix').value.trim(), ref = $('#addref').checked;
+      if (!fix) { toast('Write the corrected answer first, or choose "Answer was right".'); $('#fix').focus(); return; }
+      r.done = ref ? 'Corrected · added to reference questions' : 'Corrected'; r.fix = fix;
+      log('Corrected the answer to "' + r.q + '"' + (ref ? ' and added it to the reference questions' : '')); D.sel.review = null; render();
+      toast(ref ? 'Saved. It is now one of the reference questions.' : 'Correction saved.');
+    },
+    approve: function (b) { var i = D.updates.findIndex(function (u) { return u.id === b.dataset.id; }), u = D.updates[i], from = $('#valid-from').value.trim() || u.from; D.updates.splice(i, 1); log('Approved ' + u.act + ' ' + u.sec + ', in force from ' + from); D.sel.update = null; render(); toast('Published. Answers use the new version from ' + from + '.'); },
+    reject: function (b) {
+      var i = D.updates.findIndex(function (u) { return u.id === b.dataset.id; }), u = D.updates[i];
+      modal({ title: 'Reject this update?', danger: true, submit: 'Reject', body: '<p class="lead">' + esc(u.act) + ' ' + esc(u.sec) + ' stays as it is now. Add a reason for the log.</p>' + fld('Reason', '<input id="rj" placeholder="e.g. Detected change is a typo on the source site">'),
+        onSubmit: function () { var why = $('#rj').value.trim(); if (!why) return 'Add a reason.'; D.updates.splice(i, 1); log('Rejected ' + u.act + ' ' + u.sec + ': ' + why); D.sel.update = null; render(); toast('Rejected and logged.'); } });
+    },
+    upload: function () { $('#upfile').click(); },
+    assign: function (b) { var x = D.handoffs.find(function (h) { return h.ref === b.dataset.id; }); x.advocate = $('#adv').value.split(' · ')[0]; x.status = 'Assigned'; log('Assigned ' + x.ref + ' to ' + x.advocate); D.sel.handoff = null; render(); toast(x.ref + ' assigned to ' + x.advocate + '. The user gets an SMS.'); },
+    'handoff-done': function (b) { var x = D.handoffs.find(function (h) { return h.ref === b.dataset.id; }); x.status = 'Done'; log('Closed ' + x.ref); D.sel.handoff = null; render(); toast(x.ref + ' closed.'); },
+    'add-adv': function () {
+      modal({ title: 'Add an advocate to the panel', submit: 'Add advocate', body: fld('Name', '<input id="ad-n" placeholder="Adv. full name">') + fld('District', '<input id="ad-d" placeholder="e.g. Khulna">') + fld('Bar enrolment', '<input id="ad-e" placeholder="e.g. Khulna Bar 1234">') + '<p class="lead">Check the enrolment with the Bar Council before adding.</p>',
+        onSubmit: function () { var n = $('#ad-n').value.trim(), d = $('#ad-d').value.trim(), e = $('#ad-e').value.trim(); if (!n || !d || !e) return 'Fill in all three fields.'; ADVOCATES.push({ name: /^Adv/.test(n) ? n : 'Adv. ' + n, district: d, enrol: e }); log('Added ' + n + ' (' + d + ') to the advocate panel'); render(); toast('Added to the panel.'); } });
+    },
+    reset: function (b) { var u = D.users[+b.dataset.i]; log('Sent a password reset to ' + u[0]); toast('Reset link sent to ' + u[0] + '.'); },
+    suspend: function (b) {
+      var u = D.users[+b.dataset.i];
+      if (u[4] !== 'Active') { u[4] = 'Active'; log('Restored ' + u[0]); render(); toast(u[0] + ' restored.'); return; }
+      modal({ title: 'Suspend ' + u[0] + '?', danger: true, submit: 'Suspend', body: '<p class="lead">They cannot sign in until restored. Their workspace and matters are kept.</p>' + fld('Reason for the log', '<input id="sp" placeholder="e.g. Abusive messages reported">'),
+        onSubmit: function () { var why = $('#sp').value.trim(); if (!why) return 'Add a reason.'; u[4] = 'Suspended'; log('Suspended ' + u[0] + ': ' + why); render(); toast(u[0] + ' suspended.'); } });
+    },
+    'rm-topic': function (b) { var t = D.settings.topics.splice(+b.dataset.i, 1)[0]; render(); toast('"' + t + '" removed. Save to apply.'); },
+    'add-topic': function () { var v = $('#new-topic').value.trim(); if (!v) return; D.settings.topics.push(v); render(); toast('"' + v + '" added. Save to apply.'); },
+    run: function () { runCheck('Run by supervisor'); }
+  };
+
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-act]'); if (b && A[b.dataset.act]) A[b.dataset.act](b); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') $('#app').classList.remove('nav-open'); if (e.key === 'Enter' && e.target.id === 'new-topic') { e.preventDefault(); A['add-topic'](); } });
+  document.addEventListener('input', function (e) { if (e.target.id === 'q') { D.q = e.target.value; var pos = e.target.selectionStart; render(); var f = $('#q'); f.focus(); f.setSelectionRange(pos, pos); } });
+  document.addEventListener('change', function (e) {
+    var m = /^area(\d)$/.exec(e.target.id);
+    if (m) { var a = D.areas[+m[1]]; a.on = e.target.checked; if (a.on && a.state !== 'Live') { a.on = false; e.target.checked = false; toast(a.name + ' is not ready yet: its quality check has not passed.'); } else { log((a.on ? 'Turned on ' : 'Turned off ') + a.name + ' answers'); toast(a.name + ' answers ' + (a.on ? 'on.' : 'off. Users get "not found" for ' + a.name.toLowerCase() + ' questions.')); } }
+  });
+  document.addEventListener('submit', function (e) {
+    if (e.target.id !== 'settings-form') return;
+    e.preventDefault();
+    var s = D.settings, lim = +$('#st-limit').value;
+    if (!$('#st-bn').checked && !$('#st-en').checked) { toast('Keep at least one answer language on.'); return; }
+    if (!(lim >= 10 && lim <= 1000)) { toast('Questions per day must be between 10 and 1000.'); return; }
+    var state = $('#save-state'); state.textContent = 'Checking against the 150 reference questions…';
+    e.target.querySelector('button[type=submit]').disabled = true;
+    runCheck('Settings change', function (r) {
+      if (passes(r)) {
+        s.disclaimer = $('#st-disc').value.trim() || s.disclaimer; s.showDate = $('#st-date').checked; s.style = $('#st-style').value; s.limit = lim;
+        s.bn = $('#st-bn').checked; s.en = $('#st-en').checked; s.fallback = $('#st-fb').checked;
+        log('Changed assistant settings'); render(); toast('Check passed. The new settings are live.');
+      } else { render(); toast('Check failed, so nothing changed. See Quality checks.'); }
+    });
+  });
+  $('#upfile').addEventListener('change', function (e) {
+    var f = e.target.files[0]; if (!f) return; e.target.value = '';
+    var u = { name: f.name, busy: true, pct: 0, step: 'Reading the PDF' }; D.uploads.push(u); D.tab.library = 'updates'; go('library'); log('Uploaded ' + f.name);
+    var steps = ['Reading the PDF', 'Converting old Bijoy text to Unicode', 'Reading scanned pages (OCR)', 'Splitting into sections'], k = 0;
+    (function tick() {
+      k += 1; u.pct = Math.min(100, k * 10); u.step = steps[Math.min(steps.length - 1, Math.floor(k / 3))];
+      if (k < 10) { if (D.view === 'library') render(); setTimeout(tick, 400); return; }
+      u.busy = false; D.updates.unshift({ id: 'up' + Date.now(), act: f.name.replace(/\.[^.]+$/, ''), sec: 'New document', what: 'Uploaded · OCR done, ready to approve', found: 'Uploaded by supervisor · ' + NOW, from: '7 Mar 2027' });
+      if (D.view === 'library') render(); toast(f.name + ' is ready to approve.');
+    })();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

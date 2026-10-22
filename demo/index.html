@@ -1,0 +1,795 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Legal Assistant Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,500;7..72,600&family=Noto+Serif+Bengali:wght@400;500&display=swap">
+<style>
+/* Frontend-only prototype: every answer is mocked in the script below; nothing leaves the browser.
+   Colours are the Release 1 report's: paper, bottle-green ink, flag green, flag red for urgent only. */
+:root {
+  --paper: #f4f6f2;
+  --paper-2: #e4eae3;
+  --white: #ffffff;
+  --line: #d5ddd7;
+  --ink: #0d2a1c;
+  --soft: #4f665a;
+  --green: #006a4e;
+  --green-2: #c9ddd1;
+  --green-3: #e3f1ea;
+  --green-ink: #00543e;
+  --file-bg: #eceff5;
+  --file-ink: #33405a;
+  --accent: #c8102e;
+  --accent-bg: #fbeef0;
+  --side-fg: #e6ede8;
+  --side-soft: #9fb5a8;
+  --side-hover: #173a2a;
+  --side-active: #1f4835;
+  --ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --read: "Literata", Georgia, serif;
+  --bn: "Noto Serif Bengali", "Literata", serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.5 var(--ui); }
+button, input, textarea, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:lang(bn), .bn { font-family: var(--bn); }
+:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+svg.dots { stroke-width: 3; }
+h1, h2, h3, p { margin: 0; }
+
+.app { display: grid; grid-template-columns: 272px minmax(0, 1fr); height: 100%; }
+
+/* ---------- Sidebar ---------- */
+.side { background: var(--ink); color: var(--side-fg); display: flex; flex-direction: column; min-height: 0; padding: 12px 10px; padding-left: max(10px, env(safe-area-inset-left, 0px)); }
+.brand { display: flex; align-items: center; gap: 10px; padding: 6px 8px 16px; font-weight: 600; font-size: 16px; }
+/* logo.png keeps its white ground as a tile so the black of the figure stays visible on the dark sidebar */
+.logo { width: 36px; height: 36px; border-radius: 8px; background: #fff; object-fit: cover; display: block; }
+.brand .close { margin-left: auto; display: none; }
+.nl { display: flex; gap: 10px; align-items: center; width: 100%; padding: 8px 10px; border: 0; border-radius: 8px; background: none; text-align: left; color: inherit; }
+.nl:hover { background: var(--side-hover); }
+.nl[aria-current="page"] { background: var(--side-active); }
+.nl .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.new { border: 1px solid #2c5341; margin-bottom: 6px; }
+.lbl { font-size: 12px; color: var(--side-soft); padding: 16px 10px 6px; }
+.side .scroll { overflow-y: auto; flex: 1; min-height: 0; margin: 0 -4px; padding: 0 4px; }
+.side .none { font-size: 13px; color: var(--side-soft); padding: 4px 10px; }
+.sub .nl { padding: 6px 10px 6px 38px; font-size: 14px; color: var(--side-soft); }
+.sub .nl[aria-current="page"] { color: var(--side-fg); }
+.ws { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 8px; margin-top: 8px; border: 0; border-top: 1px solid #23493a; background: none; color: inherit; text-align: left; font-size: 13px; border-radius: 0 0 8px 8px; }
+.ws:hover { background: var(--side-hover); }
+.ws > span:nth-child(2) { min-width: 0; flex: 1; }
+.ws small { display: block; color: var(--side-soft); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.av { width: 30px; height: 30px; border-radius: 50%; background: var(--green-2); color: var(--ink); display: grid; place-items: center; font-weight: 600; font-size: 12px; flex: none; }
+
+/* ---------- Main ---------- */
+.main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.top { height: 52px; flex: none; display: flex; align-items: center; gap: 10px; padding: 0 max(16px, env(safe-area-inset-right, 0px)) 0 16px; border-bottom: 1px solid var(--line); }
+.top h2 { font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.crumb { color: var(--soft); background: none; border: 0; padding: 0; white-space: nowrap; }
+.crumb:hover { color: var(--ink); text-decoration: underline; }
+.ib { width: 34px; height: 34px; display: grid; place-items: center; border: 0; background: none; border-radius: 8px; color: var(--soft); flex: none; }
+.ib:hover { background: var(--paper-2); color: var(--ink); }
+.ib[aria-pressed="true"] { color: var(--green); }
+.ib.menu-btn { display: none; }
+.btn { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--white); border-radius: 9px; padding: 7px 12px; font-size: 14px; white-space: nowrap; }
+.btn:hover { background: var(--paper); }
+.btn.pri { background: var(--green); color: #fff; border-color: var(--green); }
+.btn.pri:hover { background: #005a42; }
+.btn.danger { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn.ghost-danger { color: var(--accent); }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; background: var(--green-3); color: var(--green-ink); border: 0; border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+.pill.grey { background: var(--paper-2); color: var(--soft); }
+.right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.view { flex: 1; overflow-y: auto; min-height: 0; }
+
+/* ---------- Menus ---------- */
+.pop { position: fixed; z-index: 60; min-width: 230px; background: var(--white); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 12px 32px rgba(13, 42, 28, .16); padding: 6px; }
+.pop .who { padding: 8px 10px 10px; font-size: 13px; color: var(--soft); border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+.pop .who b { display: block; color: var(--ink); font-size: 14px; }
+.mi { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: none; padding: 8px 10px; border-radius: 8px; text-align: left; font-size: 14px; color: var(--ink); text-decoration: none; }
+.mi:hover { background: var(--paper); }
+.mi.danger { color: var(--accent); }
+.mi .chk { margin-left: auto; color: var(--green); }
+.pop hr { border: 0; border-top: 1px solid var(--line); margin: 4px 0; }
+
+/* ---------- Home ---------- */
+.home { min-height: 100%; display: grid; align-content: center; justify-items: center; gap: 22px; padding: 24px 20px 12vh; }
+.home h1 { font: 500 clamp(28px, 4vw, 38px)/1.15 var(--read); letter-spacing: -0.02em; text-align: center; }
+.home .composer, .home .disc { width: min(760px, 100%); }
+.sugs { width: min(760px, 100%); display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.sug { text-align: left; border: 1px solid var(--line); background: var(--white); border-radius: 12px; padding: 12px 14px; font-size: 14px; color: var(--soft); }
+.sug b { display: block; color: var(--ink); font-weight: 500; }
+.sug:hover { border-color: var(--green-2); background: var(--green-3); }
+
+/* ---------- Thread ---------- */
+.thread { max-width: 780px; margin: 0 auto; padding: 28px 20px 28px; display: grid; gap: 30px; }
+.msg.user { justify-self: end; background: var(--paper-2); padding: 10px 14px; border-radius: 16px 16px 4px 16px; max-width: 80%; white-space: pre-wrap; overflow-wrap: anywhere; }
+.msg.bot { font: 17px/1.7 var(--read); min-width: 0; }
+.msg.bot .body p + p { margin-top: 10px; }
+.msg.note { justify-self: center; font-size: 13px; color: var(--green-ink); background: var(--green-3); border-radius: 999px; padding: 6px 14px; display: flex; gap: 8px; align-items: center; text-align: center; }
+.status { font: 13px/1.4 var(--ui); color: var(--soft); display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+.pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .25; } }
+.cite { font: 600 12px/1 var(--ui); background: var(--green-3); color: var(--green-ink); border: 0; border-radius: 5px; padding: 4px 7px; margin: 0 2px; vertical-align: 1px; white-space: nowrap; }
+.cite:hover { background: var(--green-2); }
+.cite.file { background: var(--file-bg); color: var(--file-ink); }
+.ask-back { margin-top: 12px; font-weight: 500; border-left: 3px solid var(--green); padding-left: 12px; }
+.sources { margin-top: 14px; font: 13px/1.4 var(--ui); background: var(--white); border: 1px solid var(--line); border-radius: 12px; padding: 6px 12px; display: grid; }
+.src { display: flex; justify-content: space-between; gap: 12px; border: 0; background: none; padding: 7px 0; text-align: left; }
+.src + .src { border-top: 1px solid #edf1ee; }
+.src span:last-child { color: var(--green-ink); white-space: nowrap; }
+.src.file span:last-child { color: var(--file-ink); }
+.handoff { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; background: var(--accent-bg); border-radius: 12px; padding: 12px 14px; font: 14px/1.45 var(--ui); }
+.handoff .btn { background: var(--accent); border-color: var(--accent); color: #fff; }
+.acts { display: flex; gap: 2px; margin-top: 6px; align-items: center; }
+.acts .ib { width: 30px; height: 30px; }
+.acts .flagged { font: 12px var(--ui); color: var(--soft); margin-left: 6px; }
+.down svg { transform: scaleY(-1); }
+
+/* ---------- Composer ---------- */
+.dock { flex: none; padding: 0 20px 12px; padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)); }
+.composer { max-width: 780px; margin: 0 auto; background: var(--white); border: 1px solid var(--line); border-radius: 18px; padding: 12px 10px 8px 16px; display: grid; gap: 6px; box-shadow: 0 2px 6px rgba(13, 42, 28, .05); }
+.composer:focus-within { border-color: var(--green); }
+.composer textarea { width: 100%; border: 0; resize: none; background: transparent; font-size: 16px; line-height: 1.5; max-height: 200px; outline: none; padding: 0; }
+.c-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.seg { display: flex; background: var(--paper); border-radius: 9px; padding: 2px; width: max-content; }
+.seg button { border: 0; background: none; font-size: 13px; padding: 5px 10px; border-radius: 7px; color: var(--soft); }
+.seg button[aria-pressed="true"] { background: var(--white); color: var(--ink); box-shadow: 0 1px 2px rgba(13, 42, 28, .12); }
+.ctx { font-size: 12px; color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.send { margin-left: auto; width: 36px; height: 36px; border: 0; border-radius: 11px; background: var(--green); color: #fff; display: grid; place-items: center; }
+.send:disabled { background: var(--green-2); cursor: default; }
+.disc { max-width: 780px; margin: 8px auto 0; text-align: center; font-size: 12px; color: var(--soft); }
+
+/* ---------- Pages ---------- */
+.page { max-width: 1000px; margin: 0 auto; padding: 28px 24px 48px; }
+.page.narrow { max-width: 760px; }
+.page-h { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+.page-h h1 { font: 500 28px/1.2 var(--read); letter-spacing: -0.01em; }
+.page-h p { width: 100%; color: var(--soft); font-size: 14px; }
+.search { width: 100%; border: 1px solid var(--line); border-radius: 10px; background: var(--white); padding: 10px 14px; margin-bottom: 18px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.card { text-align: left; border: 1px solid var(--line); background: var(--white); border-radius: 14px; padding: 16px; display: grid; gap: 6px; }
+.card:hover { border-color: var(--green); }
+.card b { font: 600 17px/1.3 var(--read); }
+.card .m { color: var(--soft); font-size: 13px; }
+.empty { color: var(--soft); padding: 24px 0; }
+
+.mv { max-width: 1140px; margin: 0 auto; padding: 24px 24px 48px; display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 28px; align-items: start; }
+.mv h1 { font: 500 30px/1.2 var(--read); letter-spacing: -0.01em; }
+.meta { color: var(--soft); font-size: 14px; margin: 6px 0 20px; display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.mv .composer { max-width: none; }
+.mv .disc { text-align: left; margin-left: 4px; }
+.list-h { font-size: 13px; font-weight: 600; color: var(--soft); margin: 28px 0 8px; }
+.rowlink { display: flex; justify-content: space-between; gap: 12px; width: 100%; text-align: left; border: 0; border-top: 1px solid var(--line); background: none; padding: 12px 4px; }
+.rowlink:hover { background: var(--white); }
+.rowlink span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.rowlink small { color: var(--soft); white-space: nowrap; }
+.panel { background: var(--white); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: grid; gap: 10px; }
+.panel + .panel { margin-top: 12px; }
+.panel h3 { font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.panel textarea { width: 100%; min-height: 96px; border: 1px solid var(--line); border-radius: 9px; padding: 9px 10px; resize: vertical; font-size: 14px; background: var(--paper); }
+.panel .note { font-size: 12px; color: var(--soft); }
+.frow-wrap { display: flex; gap: 4px; align-items: center; }
+.frow { display: flex; gap: 10px; align-items: center; border: 0; background: var(--paper); border-radius: 9px; padding: 8px 10px; text-align: left; flex: 1; min-width: 0; }
+.frow:hover { background: var(--paper-2); }
+.frow .n { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.frow small { display: block; font-size: 12px; color: var(--soft); }
+.frow small.busy { color: var(--green-ink); }
+dl.det { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 14px; }
+dl.det dt { color: var(--soft); }
+dl.det dd { margin: 0; }
+
+/* settings + members */
+.sec { background: var(--white); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; display: grid; gap: 14px; }
+.sec + .sec { margin-top: 14px; }
+.sec h2 { font-size: 16px; font-weight: 600; }
+.sec .hint { font-size: 13px; color: var(--soft); margin-top: -8px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.field { display: grid; gap: 5px; font-size: 13px; color: var(--soft); }
+.field input, .field select, .field textarea { border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; background: var(--paper); color: var(--ink); font-size: 15px; width: 100%; }
+.line { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; font-size: 14px; }
+.line small { display: block; color: var(--soft); font-size: 13px; }
+.save-row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.mem { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.mem:first-of-type { border-top: 0; }
+.mem .who { min-width: 0; }
+.mem .who b { font-weight: 500; display: block; }
+.mem .who small { color: var(--soft); font-size: 13px; display: block; overflow: hidden; text-overflow: ellipsis; }
+.mem select { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; background: var(--white); font-size: 14px; }
+.invite { display: grid; grid-template-columns: minmax(0, 1fr) 140px auto; gap: 10px; }
+.invite input, .invite select { border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; background: var(--paper); font-size: 15px; }
+
+/* sign in */
+.app.bare { grid-template-columns: 1fr; }
+.app.bare .side, .app.bare .top, .app.bare .dock { display: none; }
+.signin { min-height: 100%; display: grid; place-items: center; padding: 24px 16px; }
+.signin form { width: min(400px, 100%); background: var(--white); border: 1px solid var(--line); border-radius: 18px; padding: 28px; display: grid; gap: 14px; }
+.signin .logo { width: 52px; height: 52px; border-radius: 12px; border: 1px solid var(--line); }
+.signin h1 { font: 500 26px/1.2 var(--read); }
+.signin .sm { font-size: 13px; color: var(--soft); }
+.signin .lnk { background: none; border: 0; padding: 0; color: var(--green-ink); text-decoration: underline; font-size: 14px; justify-self: start; }
+
+/* ---------- Drawer, dialog, toast ---------- */
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(420px, 100%); background: var(--white); border-left: 1px solid var(--line); box-shadow: -10px 0 30px rgba(13, 42, 28, .10); transform: translateX(102%); transition: transform .25s ease; z-index: 30; display: flex; flex-direction: column; }
+.drawer.open { transform: none; }
+.drawer header { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.drawer .in { padding: 18px 20px; overflow-y: auto; display: grid; gap: 14px; padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+.drawer h3 { font: 600 20px/1.3 var(--read); }
+.drawer .txt { font: 16px/1.7 var(--read); background: var(--paper); border-radius: 10px; padding: 14px 16px; }
+.drawer .ver { font-size: 13px; color: var(--soft); }
+.page-mock { aspect-ratio: 1 / 1.3; background: var(--paper); border-radius: 8px; display: grid; place-items: center; color: var(--soft); font-size: 13px; text-align: center; padding: 20px; }
+dialog { border: 0; border-radius: 16px; padding: 0; width: min(500px, calc(100% - 32px)); box-shadow: 0 20px 60px rgba(13, 42, 28, .25); color: var(--ink); }
+dialog::backdrop { background: rgba(13, 42, 28, .45); }
+dialog form { padding: 20px; display: grid; gap: 12px; }
+dialog h3 { font: 600 20px/1.3 var(--read); }
+dialog p.lead { font-size: 14px; color: var(--soft); }
+dialog .box { background: var(--paper); border-radius: 10px; padding: 10px 12px; font-size: 14px; max-height: 140px; overflow-y: auto; }
+dialog .opt { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; }
+dialog .opt input { margin-top: 3px; accent-color: var(--green); }
+dialog .share-row { display: grid; grid-template-columns: auto minmax(0, 1fr) 130px; gap: 10px; align-items: center; font-size: 14px; }
+dialog .share-row select { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; background: var(--white); }
+.f-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.err { color: var(--accent); font-size: 13px; }
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); opacity: 0; background: var(--ink); color: var(--side-fg); padding: 10px 16px; border-radius: 10px; font-size: 14px; transition: .2s; pointer-events: none; z-index: 70; max-width: calc(100% - 32px); }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.scrim { display: none; }
+
+@media (max-width: 860px) {
+  .app { grid-template-columns: 1fr; }
+  .side { position: fixed; inset: 0 auto 0 0; width: min(300px, 86vw); z-index: 40; transform: translateX(-102%); transition: transform .25s ease; }
+  .app.nav-open .side { transform: none; }
+  .app.nav-open .scrim { display: block; position: fixed; inset: 0; background: rgba(13, 42, 28, .45); z-index: 35; }
+  .brand .close, .ib.menu-btn { display: grid; }
+  .mv { grid-template-columns: minmax(0, 1fr); padding: 20px 16px 40px; }
+  .page { padding: 20px 16px 40px; }
+  .sugs, .grid2 { grid-template-columns: 1fr; }
+  .thread { padding: 20px 16px; }
+  .dock { padding-left: 12px; padding-right: 12px; }
+  .top .crumb, .top .crumb + span { display: none; }
+  .invite { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .invite input, .invite select { width: 100%; min-width: 0; }
+  .invite button { grid-column: 1 / -1; }
+  .mem { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .mem select { grid-column: 2; justify-self: start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .drawer, .side, .toast { transition: none; }
+  .pulse { animation: none; }
+}
+</style>
+
+<div class="app" id="app">
+  <aside class="side" id="side" aria-label="Navigation"></aside>
+  <div class="scrim" data-act="menu"></div>
+  <div class="main">
+    <header class="top" id="top"></header>
+    <div class="view" id="view"></div>
+    <div class="dock" id="dock"></div>
+  </div>
+</div>
+
+<aside class="drawer" id="drawer" aria-label="Source" inert>
+  <header><strong id="dr-kind">Source</strong><button class="ib right" data-act="close-drawer" aria-label="Close source"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></header>
+  <div class="in" id="dr-body"></div>
+</aside>
+
+<div class="pop" id="pop" hidden></div>
+<dialog id="dlg"></dialog>
+<input type="file" id="files" multiple hidden accept=".pdf,.doc,.docx,.txt,image/*">
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  var I = {
+    plus: 'M12 5v14M5 12h14', chat: 'M4 5h16v11H9l-5 4z', brief: 'M3 8h18v12H3zM9 8V5h6v3', clip: 'M20 11l-8 8a5 5 0 01-7-7l8.5-8.5a3.3 3.3 0 014.7 4.7L9.7 16.7a1.7 1.7 0 01-2.4-2.4L15 6.6',
+    send: 'M5 12h14M13 6l6 6-6 6', menu: 'M4 7h16M4 12h16M4 17h16', x: 'M6 6l12 12M18 6L6 18', file: 'M7 3h7l5 5v13H7zM14 3v5h5',
+    copy: 'M9 9h11v11H9zM5 15V4h11', up: 'M7 11v9H4v-9zM7 11l4-7c1.5 0 2.5 1 2.2 2.6L12.5 10H19a2 2 0 012 2.3l-1.2 6A2 2 0 0117.8 20H7',
+    share: 'M4 13v7h16v-7M12 3v12M7 8l5-5 5 5', dots: 'M5 12h.5M11.75 12h.5M18.5 12h.5',
+    gear: 'M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 13a7.6 7.6 0 000-2l2-1.6-2-3.4-2.4 1a7.4 7.4 0 00-1.7-1L15 3.5h-4L10.7 6a7.4 7.4 0 00-1.7 1l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 000 2l-2 1.6 2 3.4 2.4-1a7.4 7.4 0 001.7 1l.3 2.5h4l.3-2.5a7.4 7.4 0 001.7-1l2.4 1 2-3.4z',
+    users: 'M9 11a4 4 0 100-8 4 4 0 000 8zM2 21v-1a6 6 0 0112 0v1M16 3.5a4 4 0 010 7M22 21v-1a6 6 0 00-4-5.6',
+    out: 'M15 4h4v16h-4M10 17l5-5-5-5M15 12H3', shield: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z',
+    trash: 'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3', swap: 'M4 8h14l-3-3M20 16H6l3 3', pen: 'M4 20h4L19 9l-4-4L4 16zM13 7l4 4',
+    move: 'M3 8h18v12H3zM9 8V5h6v3M10 14h6M13 11l3 3-3 3', check: 'M5 12l5 5 9-10', scale: 'M12 4v16M6 20h12M4 8h16M7 8l-3 6h6zM17 8l-3 6h6z'
+  };
+  function ic(n) { return '<svg viewBox="0 0 24 24" aria-hidden="true"' + (n === 'dots' ? ' class="dots"' : '') + '><path d="' + I[n] + '"/></svg>'; }
+  function plural(n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); }
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function initials(n) { return n.replace(/\(.*\)/, '').trim().split(/\s+/).map(function (w) { return w[0]; }).slice(0, 2).join('').toUpperCase(); }
+  var BN = /[ঀ-৿]/;
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // shared with admin.html in this browser only, so a flag or a lawyer request shows up in the supervisor's queues
+  function store(fn) { try { var d = JSON.parse(localStorage.getItem('la-demo') || '{}'); var r = fn(d); localStorage.setItem('la-demo', JSON.stringify(d)); return r; } catch (e) { return null; } }
+
+  // Sample sections. Headings only; the demo never shows statutory text it does not have.
+  var ACTS = {
+    tpa54: { s: 'TPA 1882, s. 54', act: 'Transfer of Property Act, 1882', sec: '54', h: '"Sale" defined' },
+    reg17: { s: 'Registration Act 1908, s. 17', act: 'Registration Act, 1908', sec: '17', h: 'Documents of which registration is compulsory' },
+    sat96: { s: 'SA&T Act 1950, s. 96', act: 'State Acquisition and Tenancy Act, 1950', sec: '96', h: 'Pre-emption' },
+    sat143: { s: 'SA&T Act 1950, s. 143', act: 'State Acquisition and Tenancy Act, 1950', sec: '143', h: 'Maintenance of the record-of-rights' }
+  };
+  var DISTRICTS = ['Dhaka', 'Gazipur', 'Narayanganj', 'Chattogram', 'Sylhet', 'Khulna', 'Rajshahi', 'Barishal', 'Rangpur', 'Mymensingh'];
+
+  var uid = 0; function id() { return 'x' + (++uid); }
+  var S = {
+    view: { name: 'home' }, mode: 'pro', busy: false, filter: '', ws: 'firm',
+    user: { name: 'Farhana Akter', email: 'farhana@hossainlaw.example', phone: '+880 1711 000 000', kind: 'Advocate', answerLang: 'auto', ui: 'en' },
+    workspaces: { firm: { name: 'Hossain & Associates', kind: 'Firm workspace', role: 'Owner' }, personal: { name: 'Personal', kind: 'Personal workspace', role: 'Owner' } },
+    members: [
+      { email: 'farhana@hossainlaw.example', name: 'Farhana Akter', role: 'Owner', you: true },
+      { email: 'rafiq@hossainlaw.example', name: 'Rafiq Hossain', role: 'Owner' },
+      { email: 'tania@hossainlaw.example', name: 'Tania Rahman', role: 'Member' },
+      { email: 'imran@hossainlaw.example', name: 'Imran Kabir', role: 'Member' },
+      { email: 'liaison@karim-ent.example', name: 'Client liaison', role: 'Viewer' }
+    ],
+    matters: [
+      { id: 'm1', ws: 'firm', title: 'Plot 412 sale, Gazipur', client: 'Karim Enterprises Ltd.', area: 'Land', court: 'Joint District Judge, Gazipur', caseNo: 'Title Suit 112/2026', next: '14 Apr 2027',
+        share: { 'rafiq@hossainlaw.example': 'edit', 'tania@hossainlaw.example': 'edit', 'liaison@karim-ent.example': 'view' },
+        instructions: 'We act for the buyer. Keep answers short, cite every section, and flag anything that depends on dates.',
+        files: [{ name: 'Sale deed (2019).pdf', meta: '12 pages · indexed' }, { name: 'Khatian 412.pdf', meta: 'Scan · OCR done' }, { name: 'Mutation application.pdf', meta: '4 pages · indexed' }] },
+      { id: 'm2', ws: 'firm', title: 'Office lease, Motijheel', client: 'Delta Garments', area: 'Tenancy', court: 'Not filed', caseNo: '—', next: '—',
+        share: { 'imran@hossainlaw.example': 'edit' },
+        instructions: 'Client is the tenant. Plain language for the client summary.',
+        files: [{ name: 'Lease agreement (2023).pdf', meta: '18 pages · indexed' }] },
+      { id: 'm3', ws: 'firm', title: 'Inheritance shares, Sylhet', client: 'Family of the late owner', area: 'Succession', court: 'Not filed', caseNo: '—', next: '—',
+        share: {}, instructions: '', files: [{ name: 'Family tree.jpg', meta: 'Image · OCR done' }, { name: 'Khatian scan.pdf', meta: 'Scan · OCR done' }] }
+    ],
+    chats: []
+  };
+
+  // ---------- mocked answer engine ----------
+  function cite(k, src) { src.push({ k: k }); return '<button class="cite" data-act="cite" data-key="' + k + '">' + esc(ACTS[k].s) + '</button>'; }
+  function fcite(f, p, src) { src.push({ f: f.name, p: p }); return '<button class="cite file" data-act="file" data-name="' + esc(f.name) + '" data-page="' + p + '">' + esc(f.name) + ', p. ' + p + '</button>'; }
+  function answer(q, chat) {
+    var m = matterOf(chat), files = m ? m.files : [], src = [], bn = BN.test(q), pro = S.mode === 'pro';
+    var find = function (re) { for (var i = 0; i < files.length; i++) if (re.test(files[i].name)) return files[i]; };
+    var where = 'Searched land law' + (m ? ' and ' + plural(files.length, 'matter file') : '');
+    var r = { kind: 'ok', src: src };
+    if (/arrest|police|bail|criminal|\bFIR\b|warrant|গ্রেফতার|গ্রেপ্তার|জামিন|পুলিশ/i.test(q)) {
+      r.kind = 'escalate'; r.status = 'Urgent topic · lawyer handoff';
+      r.html = bn ? '<p>বিষয়টি জরুরি এবং ফৌজদারি আইনের, তাই সাধারণ তথ্যের বদলে আজই একজন আইনজীবীর সঙ্গে কথা বলুন। পুলিশের দেওয়া কাগজপত্র সংরক্ষণ করুন।</p>'
+        : '<p>This sounds urgent and involves criminal law, so it needs a lawyer rather than general information. Please speak to an advocate today, and keep any papers the police gave you.</p>';
+    } else if (/নামজারি|mutation|record.of.rights|খতিয়ান/i.test(q)) {
+      var mu = find(/mutation/i);
+      r.html = bn ? '<p>নামজারি মানে খতিয়ানে নতুন মালিকের নাম তোলা, যা রেকর্ড-অব-রাইটস হালনাগাদের বিধান অনুযায়ী হয় ' + cite('sat143', src) + '। ' + (mu ? 'এই ম্যাটারে নামজারির আবেদনের কপি আছে ' + fcite(mu, 2, src) + '। ' : '') + 'শুনানির তারিখ জানালে পরের ধাপ বলা যাবে।</p>'
+        : '<p>Mutation (namjari) updates the record-of-rights so it shows the new owner ' + cite('sat143', src) + '. ' + (mu ? 'This matter already has the mutation application ' + fcite(mu, 2, src) + '. ' : '') + 'Tell me the hearing date and I can set out the next steps.</p>';
+    } else if (bn) {
+      r.kind = 'notfound';
+      r.html = '<p>আমার কাছে থাকা আইনে এই প্রশ্নের উত্তর খুঁজে পাইনি। এখন লাইব্রেরিতে ভূমি আইন আছে; অন্য বিষয় পরে যোগ হবে। এই প্রশ্নের জন্য একজন আইনজীবীর পরামর্শ নিন।</p>';
+    } else if (/pre-?empt|co-?sharer|co-?owner/i.test(q)) {
+      var kh = find(/khatian/i); r.kind = 'clarify';
+      r.html = (pro ? '<p>Possibly. A co-sharer tenant in the holding may apply to the court to buy a share sold to someone outside it ' + cite('sat96', src) + '. Whether that applies turns on when the co-sharer learned of the sale' + (kh ? ', and the files in this matter do not show it ' + fcite(kh, 1, src) : '') + '.</p>'
+        : '<p>Maybe. If land is sold to an outsider, a co-owner of the same holding can ask the court to let them buy it instead ' + cite('sat96', src) + '. There is a time limit, so I need one fact first.</p>')
+        + '<p class="ask-back">When did the co-sharer first receive notice of the sale?</p>';
+    } else if (/regist|deed|sale|sell|buy|purchase/i.test(q)) {
+      var deed = find(/deed/i);
+      r.html = pro ? '<p>Yes. A sale of immovable property is made by a registered instrument ' + cite('tpa54', src) + ', and a deed that transfers land is one of the documents that must be registered ' + cite('reg17', src) + '.</p>' + (deed ? '<p>The deed in this matter carries a sub-registry endorsement on its first page ' + fcite(deed, 1, src) + '.</p>' : '<p>Add the deed to a matter and I can check its registration details.</p>')
+        : '<p>Yes. In Bangladesh a land sale has to be made through a deed registered at the sub-registry office ' + cite('tpa54', src) + cite('reg17', src) + '.</p>' + (deed ? '<p>Your sale deed shows the registration stamp on page 1 ' + fcite(deed, 1, src) + '.</p>' : '');
+    } else if (/^\s*(hi|hello|hey|salam|assalamu)/i.test(q)) {
+      r.html = '<p>Hello. Ask me about Bangladeshi land law in Bangla or English, and I will cite the Act and section behind each answer.</p>'; r.status = ' ';
+    } else {
+      r.kind = 'notfound';
+      r.html = '<p>I could not find this in the law I have. The library covers land law for now, and other areas are being added. For this question, an advocate is the right person to ask.</p>';
+    }
+    if (!r.status) r.status = where + (src.length ? ' · ' + plural(src.length, 'source') : ' · nothing found');
+    return r;
+  }
+
+  function matterOf(chat) { return chat && chat.matterId ? S.matters.find(function (m) { return m.id === chat.matterId; }) : null; }
+  function matterById(mid) { return S.matters.find(function (m) { return m.id === mid; }); }
+  function chatById(cid) { return S.chats.find(function (c) { return c.id === cid; }); }
+  function sharedCount(m) { return Object.keys(m.share).length; }
+  function newChat(q, matterId) { var c = { id: id(), ws: S.ws, matterId: matterId || null, title: q, msgs: [], when: 'Just now' }; S.chats.unshift(c); return c; }
+  function seed(q, matterId, when) { var c = newChat(q, matterId); c.when = when; c.msgs.push({ role: 'user', text: q }, Object.assign({ role: 'bot' }, answer(q, c))); }
+  seed('Can the co-sharer claim the plot by pre-emption?', 'm1', 'Today');
+  seed('Did the 2019 sale need a registered deed?', 'm1', 'Yesterday');
+  seed('Can the landlord end the lease early?', 'm2', 'Mon');
+  seed('খাজনা কত দিতে হবে?', null, 'Mon');
+  seed('Does a company land purchase need registration?', null, '12 Feb');
+
+  // ---------- rendering ----------
+  var $ = function (s) { return document.querySelector(s); };
+  function cur(name, vid) { return S.view.name === name && (!vid || S.view.id === vid) ? ' aria-current="page"' : ''; }
+  function wsMatters() { return S.matters.filter(function (m) { return m.ws === S.ws; }); }
+
+  function renderSide() {
+    var w = S.workspaces[S.ws];
+    var activeMatter = S.view.name === 'matter' ? S.view.id : (S.view.name === 'chat' ? (chatById(S.view.id) || {}).matterId : null);
+    var h = '<div class="brand"><img class="logo" src="logo.png" alt="">Legal Assistant<button class="ib close" data-act="menu" aria-label="Close menu">' + ic('x') + '</button></div>'
+      + '<button class="nl new" data-act="home">' + ic('plus') + 'New chat</button>'
+      + '<button class="nl" data-act="matters"' + cur('matters') + '>' + ic('brief') + 'Matters</button>'
+      + '<div class="scroll"><div class="lbl">Matters</div>';
+    var ms = wsMatters();
+    if (!ms.length) h += '<p class="none">No matters in this workspace yet.</p>';
+    ms.forEach(function (m) {
+      h += '<button class="nl" data-act="matter" data-id="' + m.id + '"' + cur('matter', m.id) + '>' + ic('brief') + '<span class="t">' + esc(m.title) + '</span></button>';
+      if (m.id === activeMatter) {
+        h += '<div class="sub">';
+        S.chats.filter(function (c) { return c.matterId === m.id; }).forEach(function (c) {
+          h += '<button class="nl" data-act="chat" data-id="' + c.id + '"' + cur('chat', c.id) + '><span class="t">' + esc(c.title) + '</span></button>';
+        });
+        h += '</div>';
+      }
+    });
+    h += '<div class="lbl">Recent chats</div>';
+    var rc = S.chats.filter(function (c) { return !c.matterId && c.ws === S.ws; });
+    if (!rc.length) h += '<p class="none">Chats outside a matter appear here.</p>';
+    rc.forEach(function (c) {
+      h += '<button class="nl" data-act="chat" data-id="' + c.id + '"' + cur('chat', c.id) + '>' + ic('chat') + '<span class="t' + (BN.test(c.title) ? ' bn' : '') + '">' + esc(c.title) + '</span></button>';
+    });
+    h += '</div><button class="ws" data-act="profile-menu" aria-haspopup="menu"><span class="av">' + initials(S.user.name) + '</span><span>' + esc(S.user.name) + '<small>' + esc(w.name) + ' · ' + w.role + '</small></span>' + ic('dots') + '</button>';
+    $('#side').innerHTML = h;
+  }
+
+  function composer(ctx) {
+    return '<div class="composer"><textarea id="q" rows="1" aria-label="Your question" placeholder="' + (ctx ? 'Ask about this matter, in Bangla or English' : 'Ask about Bangladeshi law, in Bangla or English') + '"></textarea>'
+      + '<div class="c-row"><button class="ib" data-act="attach" aria-label="Attach files">' + ic('clip') + '</button>'
+      + '<div class="seg" role="group" aria-label="Answer style"><button data-act="mode" data-mode="simple" aria-pressed="' + (S.mode === 'simple') + '">Simple</button><button data-act="mode" data-mode="pro" aria-pressed="' + (S.mode === 'pro') + '">Professional</button></div>'
+      + '<span class="ctx">' + (ctx ? 'Matter: ' + esc(ctx.title) : 'Land law library') + '</span>'
+      + '<button class="send" id="send" data-act="send" aria-label="Send" disabled>' + ic('send') + '</button></div></div>'
+      + '<p class="disc">General legal information, not legal advice. Law as held on 1 Mar 2027.</p>';
+  }
+
+  function botHTML(m, c, i) {
+    if (m.pending) return '<div class="msg bot"><div class="status"><span class="pulse"></span>Searching the law…</div></div>';
+    var h = '<div class="msg bot' + (BN.test(m.html) ? ' bn' : '') + '"' + (m.streaming ? ' id="streaming"' : '') + '>';
+    if (m.status && m.status.trim()) h += '<div class="status">' + esc(m.status) + '</div>';
+    h += '<div class="body">' + (m.streaming ? '' : m.html) + '</div>';
+    if (!m.streaming) {
+      if (m.src.length) {
+        h += '<div class="sources">' + m.src.map(function (s) {
+          return s.k ? '<button class="src" data-act="cite" data-key="' + s.k + '"><span>' + esc(ACTS[s.k].act) + '</span><span>s. ' + ACTS[s.k].sec + '</span></button>'
+            : '<button class="src file" data-act="file" data-name="' + esc(s.f) + '" data-page="' + s.p + '"><span>' + esc(s.f) + '</span><span>p. ' + s.p + '</span></button>';
+        }).join('') + '</div>';
+      }
+      if ((m.kind === 'escalate' || m.kind === 'notfound') && !m.handoff) h += '<div class="handoff"><span>' + (m.kind === 'escalate' ? 'This needs an advocate. We can pass a summary of this chat to one.' : 'Want an advocate to look at this?') + '</span><button class="btn" data-act="lawyer" data-id="' + c.id + '" data-i="' + i + '">Talk to a lawyer</button></div>';
+      var ref = ' data-id="' + c.id + '" data-i="' + i + '"';
+      h += '<div class="acts"><button class="ib" data-act="copy" aria-label="Copy answer">' + ic('copy') + '</button>'
+        + '<button class="ib" data-act="rate"' + ref + ' aria-pressed="' + (m.rated === 'up') + '" aria-label="Good answer">' + ic('up') + '</button>'
+        + '<button class="ib down" data-act="flag"' + ref + ' aria-pressed="' + !!m.flagged + '" aria-label="Report a problem with this answer">' + ic('up') + '</button>'
+        + (m.flagged ? '<span class="flagged">Sent for review</span>' : '') + '</div>';
+    }
+    return h + '</div>';
+  }
+
+  function render() {
+    var v = S.view;
+    $('#app').classList.toggle('bare', v.name === 'signin');
+    if (v.name === 'signin') { renderSignin(); return; }
+    renderSide();
+    var top = '<button class="ib menu-btn" data-act="menu" aria-label="Open menu">' + ic('menu') + '</button>', body = '', dock = '';
+    if (v.name === 'home') {
+      top += '<h2>New chat</h2>';
+      body = '<div class="home"><h1>What would you like to know?</h1>' + composer(null)
+        + '<div class="sugs">' + [['Does a land sale need a registered deed?', 'Registration and transfer'], ['Can a co-sharer claim pre-emption?', 'Shows a follow-up question'], ['নামজারি কীভাবে করব?', 'Ask in Bangla'], ['The police arrested my brother. What now?', 'Shows the lawyer handoff']]
+          .map(function (s) { return '<button class="sug" data-act="suggest" data-q="' + esc(s[0]) + '"><b' + (BN.test(s[0]) ? ' class="bn"' : '') + '>' + esc(s[0]) + '</b>' + s[1] + '</button>'; }).join('') + '</div></div>';
+    } else if (v.name === 'chat') {
+      var c = chatById(v.id), m = matterOf(c);
+      top += (m ? '<button class="crumb" data-act="matter" data-id="' + m.id + '">' + esc(m.title) + '</button><span aria-hidden="true">/</span>' : '') + '<h2' + (BN.test(c.title) ? ' class="bn"' : '') + '>' + esc(c.title) + '</h2>'
+        + '<div class="right"><button class="ib" data-act="chat-menu" data-id="' + c.id + '" aria-haspopup="menu" aria-label="Chat options">' + ic('dots') + '</button></div>';
+      body = '<div class="thread">' + c.msgs.map(function (x, i) {
+        if (x.role === 'user') return '<div class="msg user' + (BN.test(x.text) ? ' bn' : '') + '">' + esc(x.text) + '</div>';
+        if (x.role === 'note') return '<div class="msg note">' + ic('check') + esc(x.text) + '</div>';
+        return botHTML(x, c, i);
+      }).join('') + '</div>';
+      dock = composer(m);
+    } else if (v.name === 'matters') {
+      top += '<h2>Matters</h2><div class="right"><button class="btn pri" data-act="new-matter">' + ic('plus') + 'New matter</button></div>';
+      var f = S.filter.toLowerCase(), list = wsMatters().filter(function (m) { return (m.title + ' ' + m.client).toLowerCase().indexOf(f) > -1; });
+      body = '<div class="page"><div class="page-h"><h1>Matters</h1><p>' + esc(S.workspaces[S.ws].name) + ' · each matter keeps its own files, instructions and chats.</p></div><input class="search" id="filter" type="search" placeholder="Search matters or clients" aria-label="Search matters" value="' + esc(S.filter) + '">'
+        + (list.length ? '<div class="cards">' + list.map(function (m) {
+          var n = S.chats.filter(function (c) { return c.matterId === m.id; }).length;
+          return '<button class="card" data-act="matter" data-id="' + m.id + '"><b>' + esc(m.title) + '</b><span class="m">' + esc(m.client) + ' · ' + esc(m.area) + '</span><span class="m">' + plural(m.files.length, 'file') + ' · ' + plural(n, 'chat') + ' · ' + (sharedCount(m) ? 'shared with ' + sharedCount(m) : 'private') + '</span></button>';
+        }).join('') + '</div>' : '<p class="empty">' + (wsMatters().length ? 'No matter matches that search.' : 'No matters yet. Create one to keep a case\'s files and chats together.') + '</p>') + '</div>';
+    } else if (v.name === 'matter') {
+      var mt = matterById(v.id), chats = S.chats.filter(function (c) { return c.matterId === mt.id; });
+      top += '<button class="crumb" data-act="matters">Matters</button><span aria-hidden="true">/</span><h2>' + esc(mt.title) + '</h2><div class="right"><button class="btn" data-act="share" data-id="' + mt.id + '">' + ic('share') + 'Share</button><button class="ib" data-act="matter-menu" data-id="' + mt.id + '" aria-haspopup="menu" aria-label="Matter options">' + ic('dots') + '</button></div>';
+      body = '<div class="mv"><div><h1>' + esc(mt.title) + '</h1><div class="meta"><span>' + esc(mt.client) + '</span><span>' + esc(mt.caseNo) + '</span><span class="pill">' + esc(mt.area) + '</span><span class="pill' + (sharedCount(mt) ? '' : ' grey') + '">' + (sharedCount(mt) ? 'Shared with ' + sharedCount(mt) : 'Private') + '</span></div>'
+        + composer(mt)
+        + '<p class="list-h">Chats in this matter</p>' + (chats.length ? chats.map(function (c) { return '<button class="rowlink" data-act="chat" data-id="' + c.id + '"><span>' + esc(c.title) + '</span><small>' + esc(c.when) + '</small></button>'; }).join('') : '<p class="empty">No chats yet. Ask a question above to start one.</p>')
+        + '</div><div>'
+        + '<section class="panel"><h3>Instructions</h3><textarea id="instr" aria-label="Matter instructions" placeholder="How should the assistant work on this matter?">' + esc(mt.instructions) + '</textarea><div class="right" style="justify-content:space-between;margin:0"><span class="note">Shapes answers; never cited as law.</span><button class="btn" data-act="save-instr">Save</button></div></section>'
+        + '<section class="panel"><h3>Files <button class="btn" data-act="attach">' + ic('plus') + 'Add</button></h3>' + (mt.files.length ? mt.files.map(function (fl, i) {
+          return '<div class="frow-wrap"><button class="frow" data-act="file" data-name="' + esc(fl.name) + '" data-page="1">' + ic('file') + '<span class="n">' + esc(fl.name) + '<small' + (fl.busy ? ' class="busy"' : '') + '>' + esc(fl.meta) + '</small></span></button><button class="ib" data-act="remove-file" data-i="' + i + '" aria-label="Remove ' + esc(fl.name) + '">' + ic('x') + '</button></div>';
+        }).join('') : '<p class="note">No files yet. Add PDFs, Word files or photos; scans are read with OCR.</p>') + '<p class="note">Private to this matter.</p></section>'
+        + '<section class="panel"><h3>Details <button class="btn" data-act="edit-matter" data-id="' + mt.id + '">' + ic('pen') + 'Edit</button></h3><dl class="det"><dt>Client</dt><dd>' + esc(mt.client) + '</dd><dt>Court</dt><dd>' + esc(mt.court) + '</dd><dt>Case no.</dt><dd>' + esc(mt.caseNo) + '</dd><dt>Next date</dt><dd>' + esc(mt.next) + '</dd></dl></section>'
+        + '</div></div>';
+    } else if (v.name === 'settings') {
+      var u = S.user;
+      top += '<h2>Profile and settings</h2>';
+      body = '<div class="page narrow"><div class="page-h"><h1>Profile and settings</h1></div><form id="settings-form">'
+        + '<section class="sec"><h2>Profile</h2><div class="grid2">'
+        + fld('Full name', '<input id="s-name" value="' + esc(u.name) + '" autocomplete="name">') + fld('Email', '<input id="s-email" type="email" value="' + esc(u.email) + '" autocomplete="email">')
+        + fld('Phone', '<input id="s-phone" value="' + esc(u.phone) + '" autocomplete="tel">') + fld('I use this as', sel('s-kind', ['Advocate', 'Law firm staff', 'Business', 'Individual'], u.kind)) + '</div></section>'
+        + '<section class="sec"><h2>Answers</h2><div class="grid2">'
+        + fld('Answer language', sel('s-alang', [['auto', 'Same as my question'], ['bn', 'Always Bangla'], ['en', 'Always English']], u.answerLang))
+        + fld('Default answer style', sel('s-mode', [['simple', 'Simple'], ['pro', 'Professional']], S.mode))
+        + fld('Interface language', sel('s-ui', [['en', 'English'], ['bn', 'বাংলা']], u.ui)) + '</div></section>'
+        + '<section class="sec"><h2>Data and privacy</h2><p class="hint">Chats are never used to train the model. Matter files stay private to their matter.</p>'
+        + '<div class="line"><span>Download my data<small>A copy of your chats and matter notes.</small></span><button type="button" class="btn" data-act="download-data">Request download</button></div>'
+        + '<div class="line"><span>Delete all my chats<small>Removes every chat in all workspaces. Matters and files stay.</small></span><button type="button" class="btn ghost-danger" data-act="delete-all">Delete chats</button></div></section>'
+        + '<div class="save-row"><button type="button" class="btn" data-act="signout">' + ic('out') + 'Sign out</button><button type="submit" class="btn pri">Save changes</button></div></form></div>';
+    } else if (v.name === 'members') {
+      var w = S.workspaces[S.ws], firm = S.ws === 'firm';
+      top += '<h2>Members</h2>';
+      body = '<div class="page narrow"><div class="page-h"><h1>Members</h1><p>' + esc(w.name) + (firm ? ' · ' + plural(S.members.length, 'member') + '. Owners invite people and set roles; members see the matters shared with them.' : '') + '</p></div>'
+        + (firm ? '<section class="sec"><h2>Invite a colleague</h2><form class="invite" id="invite-form"><input id="inv-email" type="email" placeholder="name@firm.example" aria-label="Email to invite"><select id="inv-role" aria-label="Role"><option>Member</option><option>Viewer</option><option>Owner</option></select><button class="btn pri" type="submit">Send invite</button></form>'
+          + '<p class="hint" style="margin:0">Owner: manages members and every matter. Member: works on shared matters. Viewer: reads shared matters, cannot ask.</p></section>'
+          + '<section class="sec"><h2>People</h2><div>' + S.members.map(function (p, i) {
+            return '<div class="mem"><span class="av">' + initials(p.name) + '</span><span class="who"><b>' + esc(p.name) + (p.you ? ' (you)' : '') + (p.invited ? ' · invited' : '') + '</b><small>' + esc(p.email) + '</small></span>'
+              + '<select data-role="' + i + '" aria-label="Role for ' + esc(p.name) + '"' + (p.you ? ' disabled' : '') + '>' + ['Owner', 'Member', 'Viewer'].map(function (r) { return '<option' + (r === p.role ? ' selected' : '') + '>' + r + '</option>'; }).join('') + '</select>'
+              + (p.you ? '<span></span>' : '<button class="ib" data-act="remove-member" data-i="' + i + '" aria-label="Remove ' + esc(p.name) + '">' + ic('trash') + '</button>') + '</div>';
+          }).join('') + '</div></section>'
+          : '<section class="sec"><p>A personal workspace has one member: you. Switch to Hossain &amp; Associates to manage the firm\'s members.</p><div><button class="btn" data-act="switch-ws">' + ic('swap') + 'Switch workspace</button></div></section>')
+        + '</div>';
+    }
+    $('#top').innerHTML = top; $('#view').innerHTML = body; $('#dock').innerHTML = dock; $('#dock').hidden = !dock;
+    var view = $('#view'); if (v.name === 'chat') view.scrollTop = view.scrollHeight; else view.scrollTop = 0;
+    bindComposer();
+  }
+  function fld(label, input) { return '<label class="field">' + label + input + '</label>'; }
+  function sel(idv, opts, val) { return '<select id="' + idv + '">' + opts.map(function (o) { var k = Array.isArray(o) ? o[0] : o, t = Array.isArray(o) ? o[1] : o; return '<option value="' + esc(k) + '"' + (k === val ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('') + '</select>'; }
+
+  function renderSignin() {
+    $('#view').innerHTML = '<div class="signin"><form id="signin-form" novalidate><img class="logo" src="logo.png" alt=""><h1>Sign in to Legal Assistant</h1><p class="sm">Cited answers on Bangladeshi law, in Bangla and English.</p>'
+      + fld('Email', '<input id="si-email" type="email" autocomplete="email" value="' + esc(S.user.email) + '">') + fld('Password', '<input id="si-pass" type="password" autocomplete="current-password" placeholder="Any password works in this demo">')
+      + '<p class="err" id="si-err" hidden>Enter your email to continue.</p><button class="btn pri" type="submit" style="justify-content:center">Continue</button><button type="button" class="lnk" data-act="forgot">Forgot password?</button>'
+      + '<p class="sm">General legal information, not legal advice.</p></form></div>';
+    $('#top').innerHTML = ''; $('#dock').innerHTML = '';
+  }
+
+  function bindComposer() {
+    var t = $('#q'), b = $('#send'); if (!t) return;
+    var sync = function () { t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 200) + 'px'; b.disabled = !t.value.trim() || S.busy; };
+    t.addEventListener('input', sync);
+    t.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); if (!b.disabled) send(t.value); } });
+    if (matchMedia('(min-width: 861px)').matches) t.focus();
+    sync();
+  }
+
+  function go(view) { S.view = view; $('#app').classList.remove('nav-open'); closeDrawer(); hideMenu(); render(); }
+
+  // ---------- send + streamed reply ----------
+  function send(text) {
+    text = text.trim(); if (!text || S.busy) return;
+    var v = S.view, c = v.name === 'chat' ? chatById(v.id) : newChat(text, v.name === 'matter' ? v.id : null);
+    c.msgs.push({ role: 'user', text: text }); c.when = 'Just now';
+    var bot = { role: 'bot', pending: true }; c.msgs.push(bot);
+    S.busy = true; go({ name: 'chat', id: c.id });
+    setTimeout(function () {
+      Object.assign(bot, answer(text, c), { pending: false, streaming: true });
+      render();
+      var el = $('#streaming .body'), parts = bot.html.split(/(<button[\s\S]*?<\/button>|<[^>]+>)/).reduce(function (a, p) {
+        if (!p) return a; if (p.charAt(0) === '<') a.push(p); else a.push.apply(a, p.split(/(\s+)/).filter(Boolean)); return a;
+      }, []);
+      var i = 0, out = '', view = $('#view');
+      (function tick() {
+        if (!el || !el.isConnected) { finish(); return; }
+        var n = reduce ? parts.length : 3;
+        while (n-- > 0 && i < parts.length) out += parts[i++];
+        el.innerHTML = out; view.scrollTop = view.scrollHeight;
+        if (i < parts.length) setTimeout(tick, 40); else finish();
+      })();
+      function finish() { bot.streaming = false; S.busy = false; if (S.view.name === 'chat' && S.view.id === c.id) render(); }
+    }, reduce ? 0 : 900);
+  }
+
+  // ---------- menus, dialogs, drawer, toast ----------
+  function menu(anchor, html) {
+    var p = $('#pop'); p.innerHTML = html; p.hidden = false;
+    var r = anchor.getBoundingClientRect(), w = p.offsetWidth, h = p.offsetHeight;
+    p.style.left = Math.max(8, Math.min(r.left, innerWidth - w - 8)) + 'px';
+    p.style.top = (r.bottom + h + 8 > innerHeight ? Math.max(8, r.top - h - 6) : r.bottom + 6) + 'px';
+  }
+  function hideMenu() { $('#pop').hidden = true; }
+  function mi(act, icon, label, attrs, cls) { return '<button class="mi' + (cls ? ' ' + cls : '') + '" data-act="' + act + '"' + (attrs || '') + '>' + ic(icon) + label + '</button>'; }
+
+  function modal(o) {
+    var d = $('#dlg');
+    d.innerHTML = '<form id="mf" novalidate><h3>' + esc(o.title) + '</h3>' + o.body + '<p class="err" id="merr" hidden></p><div class="f-actions"><button type="button" class="btn" data-act="close-dlg">Cancel</button><button type="submit" class="btn ' + (o.danger ? 'danger' : 'pri') + '">' + esc(o.submit) + '</button></div></form>';
+    d.showModal();
+    var f = $('#mf'), first = f.querySelector('input:not([type=radio]):not([type=checkbox]), textarea, select'); if (first) first.focus();
+    f.onsubmit = function (e) { e.preventDefault(); var err = o.onSubmit(f); if (err) { $('#merr').textContent = err; $('#merr').hidden = false; } else d.close(); };
+  }
+  function matterForm(m) {
+    m = m || {};
+    return fld('Matter title', '<input id="f-title" value="' + esc(m.title || '') + '" placeholder="e.g. Plot 88 boundary dispute">')
+      + '<div class="grid2">' + fld('Client', '<input id="f-client" value="' + esc(m.client || '') + '" placeholder="Client name">') + fld('Area of law', sel('f-area', ['Land', 'Tenancy', 'Succession', 'Contract', 'Company'], m.area || 'Land')) + '</div>'
+      + '<div class="grid2">' + fld('Court', '<input id="f-court" value="' + esc(m.court && m.court !== 'Not filed' ? m.court : '') + '" placeholder="e.g. Joint District Judge, Dhaka">') + fld('Case number', '<input id="f-case" value="' + esc(m.caseNo && m.caseNo !== '—' ? m.caseNo : '') + '" placeholder="e.g. Title Suit 45/2027">') + '</div>'
+      + fld('Next date', '<input id="f-next" value="' + esc(m.next && m.next !== '—' ? m.next : '') + '" placeholder="e.g. 14 Apr 2027">');
+  }
+  function readMatter(m) {
+    var t = $('#f-title').value.trim(); if (!t) return 'Give the matter a title.';
+    m.title = t; m.client = $('#f-client').value.trim() || 'Client not set'; m.area = $('#f-area').value;
+    m.court = $('#f-court').value.trim() || 'Not filed'; m.caseNo = $('#f-case').value.trim() || '—'; m.next = $('#f-next').value.trim() || '—';
+  }
+
+  function openDrawer(kind, html) { $('#dr-kind').textContent = kind; $('#dr-body').innerHTML = html; var d = $('#drawer'); d.inert = false; d.classList.add('open'); d.querySelector('button').focus(); }
+  function closeDrawer() { var d = $('#drawer'); d.classList.remove('open'); d.inert = true; }
+  var tt; function toast(msg) { var t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(tt); tt = setTimeout(function () { t.classList.remove('show'); }, 2800); }
+
+  function currentMatter() {
+    if (S.view.name === 'matter') return matterById(S.view.id);
+    if (S.view.name === 'chat') return matterOf(chatById(S.view.id));
+  }
+  $('#files').addEventListener('change', function (e) {
+    var m = currentMatter(); if (!m) return;
+    [].forEach.call(e.target.files, function (f) {
+      var rec = { name: f.name, meta: 'Reading and indexing…', busy: true }; m.files.push(rec);
+      setTimeout(function () { rec.busy = false; rec.meta = (/^image\//.test(f.type) ? 'Image · OCR done' : Math.max(1, Math.round(f.size / 40000)) + ' pages · indexed'); if (S.view.name === 'matter') render(); }, 1800);
+    });
+    e.target.value = ''; toast('Added to ' + m.title + '. Only this matter can see it.');
+    if (S.view.name === 'matter') render();
+  });
+
+  // ---------- actions ----------
+  var A = {
+    home: function () { go({ name: 'home' }); },
+    matters: function () { go({ name: 'matters' }); },
+    matter: function (b) { go({ name: 'matter', id: b.dataset.id }); },
+    chat: function (b) { go({ name: 'chat', id: b.dataset.id }); },
+    menu: function () { $('#app').classList.toggle('nav-open'); },
+    send: function () { send($('#q').value); },
+    suggest: function (b) { send(b.dataset.q); },
+    mode: function (b) { S.mode = b.dataset.mode; b.parentNode.querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); toast(S.mode === 'pro' ? 'Professional: full citations and legal terms.' : 'Simple: plain language, sources still listed.'); },
+    attach: function () { if (currentMatter()) $('#files').click(); else toast('Open a matter to add files. Files stay private to that matter.'); },
+    cite: function (b) {
+      var s = ACTS[b.dataset.key];
+      openDrawer('Law', '<h3>' + esc(s.act) + '</h3><p class="ver">Section ' + s.sec + ' · ' + esc(s.h) + '</p><div class="txt">The full text of section ' + s.sec + ' opens here from the law library, in Bangla and English, with each amendment kept as a dated version.</div><p class="ver">Version shown: law as held on 1 Mar 2027. Source: bdlaws.minlaw.gov.bd</p>');
+    },
+    file: function (b) { openDrawer('Matter file', '<h3>' + esc(b.dataset.name) + '</h3><p class="ver">Page ' + esc(b.dataset.page) + ' · private to this matter</p><div class="page-mock">Page ' + esc(b.dataset.page) + ' preview, with the cited passage highlighted.</div>'); },
+    'close-drawer': closeDrawer,
+    'close-dlg': function () { $('#dlg').close(); },
+    'save-instr': function () { currentMatter().instructions = $('#instr').value; toast('Instructions saved for this matter.'); },
+    'remove-file': function (b) { var m = currentMatter(), f = m.files.splice(+b.dataset.i, 1)[0]; render(); toast(f.name + ' removed from this matter.'); },
+    copy: function (b) {
+      var txt = b.closest('.msg').querySelector('.body').innerText;
+      try { navigator.clipboard.writeText(txt).then(function () { toast('Answer copied.'); }, function () { toast('Copy is blocked here. Select the text instead.'); }); } catch (err) { toast('Copy is blocked here. Select the text instead.'); }
+    },
+    rate: function (b) { var m = chatById(b.dataset.id).msgs[+b.dataset.i]; m.rated = m.rated === 'up' ? null : 'up'; b.setAttribute('aria-pressed', String(m.rated === 'up')); if (m.rated) toast('Thanks for the feedback.'); },
+    flag: function (b) {
+      var c = chatById(b.dataset.id), i = +b.dataset.i, m = c.msgs[i];
+      if (m.flagged) { toast('Already sent for review.'); return; }
+      modal({ title: 'What was wrong with this answer?', submit: 'Send for review', body: '<p class="lead">A supervisor reviews every report and corrects the answer if needed.</p>'
+        + ['Cites the wrong section', 'The law has changed', 'Did not answer my question', 'Something else'].map(function (r, k) { return '<label class="opt"><input type="radio" name="reason" value="' + r + '"' + (k ? '' : ' checked') + '>' + r + '</label>'; }).join('')
+        + fld('Anything else? (optional)', '<textarea id="fb-note" rows="3"></textarea>'),
+        onSubmit: function (f) {
+          var reason = f.querySelector('input[name=reason]:checked').value;
+          m.flagged = true;
+          store(function (d) { (d.flags = d.flags || []).unshift({ id: Date.now(), when: new Date().toISOString(), q: c.msgs[i - 1].text, answer: b.closest('.msg').querySelector('.body').innerText, reason: reason, note: $('#fb-note').value, user: S.user.name, ws: S.workspaces[S.ws].name }); });
+          render(); toast('Sent to the review queue.');
+        } });
+    },
+    lawyer: function (b) {
+      var c = chatById(b.dataset.id), i = +b.dataset.i, q = c.msgs[i - 1] ? c.msgs[i - 1].text : c.title;
+      modal({ title: 'Talk to a lawyer', submit: 'Send request', body: '<p class="lead">An advocate from our panel will contact you. They see only the summary below.</p><div class="box' + (BN.test(q) ? ' bn' : '') + '">' + esc(q) + '</div>'
+        + '<div class="grid2">' + fld('District', sel('h-district', DISTRICTS, 'Dhaka')) + fld('Contact me by', sel('h-contact', [['phone', 'Phone · ' + S.user.phone], ['email', 'Email · ' + S.user.email]], 'phone')) + '</div>'
+        + '<label class="opt"><input type="checkbox" id="h-ok">I agree to share this question with an advocate.</label>',
+        onSubmit: function () {
+          if (!$('#h-ok').checked) return 'Tick the box to share your question with an advocate.';
+          var ref = 'LA-' + (1040 + Math.floor(Math.random() * 900)), district = $('#h-district').value, by = $('#h-contact').value;
+          c.msgs[i].handoff = true;
+          c.msgs.splice(i + 1, 0, { role: 'note', text: 'Lawyer request ' + ref + ' sent. An advocate in ' + district + ' will contact you by ' + by + '.' });
+          store(function (d) { (d.handoffs = d.handoffs || []).unshift({ ref: ref, when: new Date().toISOString(), q: q, district: district, contact: by, user: S.user.name, ws: S.workspaces[S.ws].name }); });
+          render();
+        } });
+    },
+    'profile-menu': function (b) {
+      var other = S.ws === 'firm' ? 'personal' : 'firm';
+      menu(b, '<div class="who"><b>' + esc(S.user.name) + '</b>' + esc(S.user.email) + '</div>'
+        + mi('settings', 'gear', 'Profile and settings') + mi('members', 'users', 'Workspace members')
+        + mi('switch-ws', 'swap', 'Switch to ' + esc(S.workspaces[other].name))
+        + '<a class="mi" href="admin.html">' + ic('shield') + 'Admin console</a><hr>' + mi('signout', 'out', 'Sign out'));
+    },
+    settings: function () { go({ name: 'settings' }); },
+    members: function () { go({ name: 'members' }); },
+    'switch-ws': function () { S.ws = S.ws === 'firm' ? 'personal' : 'firm'; S.filter = ''; go(S.view.name === 'members' ? { name: 'members' } : { name: 'home' }); toast('Now in ' + S.workspaces[S.ws].name + '.'); },
+    signout: function () { go({ name: 'signin' }); },
+    forgot: function () { toast('A reset link goes to your email.'); },
+    'download-data': function () { toast('We will email a download link within 24 hours.'); },
+    'delete-all': function () {
+      modal({ title: 'Delete all your chats?', danger: true, submit: 'Delete chats', body: '<p class="lead">This removes ' + plural(S.chats.length, 'chat') + ' in every workspace. Matters, files and instructions stay. This cannot be undone.</p>',
+        onSubmit: function () { S.chats = []; render(); toast('All chats deleted.'); } });
+    },
+    'chat-menu': function (b) {
+      var d = ' data-id="' + b.dataset.id + '"';
+      menu(b, mi('rename-chat', 'pen', 'Rename', d) + mi('move-chat', 'move', 'Move to a matter', d) + '<hr>' + mi('delete-chat', 'trash', 'Delete chat', d, 'danger'));
+    },
+    'rename-chat': function (b) {
+      var c = chatById(b.dataset.id);
+      modal({ title: 'Rename chat', submit: 'Save', body: fld('Name', '<input id="r-name" value="' + esc(c.title) + '">'),
+        onSubmit: function () { var t = $('#r-name').value.trim(); if (!t) return 'The name cannot be empty.'; c.title = t; render(); } });
+    },
+    'move-chat': function (b) {
+      var c = chatById(b.dataset.id);
+      modal({ title: 'Move chat', submit: 'Move', body: '<p class="lead">The chat will use that matter\'s files and instructions from its next answer.</p>' + fld('Matter', sel('mv-to', [['', 'No matter']].concat(wsMatters().map(function (m) { return [m.id, m.title]; })), c.matterId || '')),
+        onSubmit: function () { c.matterId = $('#mv-to').value || null; render(); toast(c.matterId ? 'Moved to ' + matterOf(c).title + '.' : 'Moved out of the matter.'); } });
+    },
+    'delete-chat': function (b) {
+      var c = chatById(b.dataset.id);
+      modal({ title: 'Delete this chat?', danger: true, submit: 'Delete', body: '<p class="lead">"' + esc(c.title) + '" will be removed. This cannot be undone.</p>',
+        onSubmit: function () { var back = c.matterId; S.chats.splice(S.chats.indexOf(c), 1); go(back ? { name: 'matter', id: back } : { name: 'home' }); toast('Chat deleted.'); } });
+    },
+    'new-matter': function () {
+      modal({ title: 'New matter', submit: 'Create matter', body: matterForm(),
+        onSubmit: function () { var m = { id: id(), ws: S.ws, share: {}, instructions: '', files: [] }, err = readMatter(m); if (err) return err; S.matters.unshift(m); go({ name: 'matter', id: m.id }); toast('Matter created. Add files and instructions on the right.'); } });
+    },
+    'matter-menu': function (b) {
+      var d = ' data-id="' + b.dataset.id + '"';
+      menu(b, mi('edit-matter', 'pen', 'Edit details', d) + mi('share', 'share', 'Share', d) + '<hr>' + mi('delete-matter', 'trash', 'Delete matter', d, 'danger'));
+    },
+    'edit-matter': function (b) {
+      var m = matterById(b.dataset.id);
+      modal({ title: 'Edit matter', submit: 'Save', body: matterForm(m), onSubmit: function () { var err = readMatter(m); if (err) return err; render(); toast('Matter updated.'); } });
+    },
+    'delete-matter': function (b) {
+      var m = matterById(b.dataset.id), n = S.chats.filter(function (c) { return c.matterId === m.id; }).length;
+      modal({ title: 'Delete this matter?', danger: true, submit: 'Delete matter', body: '<p class="lead">"' + esc(m.title) + '" and its ' + plural(m.files.length, 'file') + ' and ' + plural(n, 'chat') + ' will be removed for everyone it is shared with. This cannot be undone.</p>',
+        onSubmit: function () { S.chats = S.chats.filter(function (c) { return c.matterId !== m.id; }); S.matters.splice(S.matters.indexOf(m), 1); go({ name: 'matters' }); toast('Matter deleted.'); } });
+    },
+    share: function (b) {
+      var m = matterById(b.dataset.id);
+      if (S.ws !== 'firm') { toast('Personal matters cannot be shared. Move it to a firm workspace first.'); return; }
+      modal({ title: 'Share "' + m.title + '"', submit: 'Save sharing', body: '<p class="lead">People in Hossain &amp; Associates who can open this matter.</p>'
+        + S.members.filter(function (p) { return !p.you; }).map(function (p) {
+          var cur = m.share[p.email] || '';
+          return '<div class="share-row"><span class="av">' + initials(p.name) + '</span><span>' + esc(p.name) + '<br><small style="color:var(--soft)">' + p.role + '</small></span><select data-share="' + esc(p.email) + '" aria-label="Access for ' + esc(p.name) + '"><option value=""' + (cur ? '' : ' selected') + '>No access</option><option value="view"' + (cur === 'view' ? ' selected' : '') + '>Can view</option>' + (p.role === 'Viewer' ? '' : '<option value="edit"' + (cur === 'edit' ? ' selected' : '') + '>Can edit</option>') + '</select></div>';
+        }).join('') + '<button type="button" class="btn" data-act="copy-link" style="justify-self:start">' + ic('copy') + 'Copy link</button>',
+        onSubmit: function (f) { m.share = {}; f.querySelectorAll('[data-share]').forEach(function (s) { if (s.value) m.share[s.dataset.share] = s.value; }); render(); toast(sharedCount(m) ? 'Shared with ' + plural(sharedCount(m), 'person') .replace('persons', 'people') + '.' : 'This matter is now private.'); } });
+    },
+    'copy-link': function () { try { navigator.clipboard.writeText('https://app.example/matters/' + S.view.id).then(function () { toast('Link copied. Only people with access can open it.'); }, function () { toast('Copy is blocked here.'); }); } catch (e) { toast('Copy is blocked here.'); } },
+    'remove-member': function (b) {
+      var p = S.members[+b.dataset.i];
+      modal({ title: 'Remove ' + p.name + '?', danger: true, submit: 'Remove', body: '<p class="lead">They lose access to every matter in this workspace at once. Their chats stay with the matters.</p>',
+        onSubmit: function () { S.members.splice(S.members.indexOf(p), 1); S.matters.forEach(function (m) { delete m.share[p.email]; }); render(); toast(p.name + ' removed.'); } });
+    }
+  };
+
+  // ---------- events ----------
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]');
+    if (!e.target.closest('#pop') && !(b && /-menu$/.test(b.dataset.act))) hideMenu();
+    if (!b) return;
+    if (b.closest('#pop')) hideMenu();
+    var fn = A[b.dataset.act]; if (fn) fn(b);
+  });
+  document.addEventListener('input', function (e) { if (e.target.id === 'filter') { S.filter = e.target.value; var pos = e.target.selectionStart; render(); var f = $('#filter'); f.focus(); f.setSelectionRange(pos, pos); } });
+  document.addEventListener('change', function (e) {
+    if (e.target.dataset.role) { var p = S.members[+e.target.dataset.role]; p.role = e.target.value; toast(p.name + ' is now ' + p.role.toLowerCase() + '.'); }
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeDrawer(); hideMenu(); $('#app').classList.remove('nav-open'); } });
+  document.addEventListener('submit', function (e) {
+    var f = e.target;
+    if (f.id === 'settings-form') {
+      e.preventDefault();
+      var u = S.user, n = $('#s-name').value.trim(), em = $('#s-email').value.trim();
+      if (!n || !/^\S+@\S+\.\S+$/.test(em)) { toast('Enter your name and a valid email.'); return; }
+      u.name = n; u.email = em; u.phone = $('#s-phone').value.trim(); u.kind = $('#s-kind').value; u.answerLang = $('#s-alang').value; S.mode = $('#s-mode').value;
+      var ui = $('#s-ui').value; u.ui = ui;
+      S.members.forEach(function (p) { if (p.you) { p.name = n; p.email = em; } });
+      render(); toast(ui === 'bn' ? 'Saved. The product ships with a Bangla interface; this demo stays in English.' : 'Settings saved.');
+    } else if (f.id === 'invite-form') {
+      e.preventDefault();
+      var email = $('#inv-email').value.trim();
+      if (!/^\S+@\S+\.\S+$/.test(email)) { toast('Enter a valid email address.'); return; }
+      if (S.members.some(function (p) { return p.email === email; })) { toast('That person is already in the workspace.'); return; }
+      S.members.push({ email: email, name: email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, function (x) { return x.toUpperCase(); }), role: $('#inv-role').value, invited: true });
+      render(); toast('Invite sent to ' + email + '.');
+    } else if (f.id === 'signin-form') {
+      e.preventDefault();
+      if (!/^\S+@\S+\.\S+$/.test($('#si-email').value.trim())) { $('#si-err').hidden = false; return; }
+      go({ name: 'home' }); toast('Signed in.');
+    }
+  });
+
+  render();
+})();
+</script>
