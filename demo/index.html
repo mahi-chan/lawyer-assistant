@@ -684,6 +684,8 @@ dialog .share-row select { border: 1px solid var(--line); border-radius: 8px; pa
     $('#cv-t').innerHTML = '<b>' + esc(d.title) + '</b><small>' + esc(TPL[d.tpl].name) + ' template · version ' + d.versions.length + ' · ' + esc(last(d).label) + '</small>';
     $('#cv-bl').textContent = n ? plural(n, 'blank') + ' left to fill' : 'no blanks left';
   }
+  // the claude.ai artifact viewer injects window.claude and blocks plain downloads and printing
+  function inPreview() { return !!(window.claude && window.claude.use); }
   function docHTML(d) {
     return '<html><head><meta charset="utf-8"><title>' + esc(d.title) + '</title><style>body{font:12pt/1.6 "Times New Roman",serif;max-width:16cm;margin:2cm auto}h4{text-align:center;text-transform:uppercase;letter-spacing:.05em}.c{text-align:center}.bl{background:#fff1c2}</style></head><body>' + last(d).html + '</body></html>';
   }
@@ -919,6 +921,7 @@ dialog .share-row select { border: 1px solid var(--line); border-radius: 8px; pa
     'draft-download': function (b) { menu(b, mi('draft-word', 'file', 'Word document') + mi('draft-pdf', 'file', 'PDF')); },
     'draft-word': function () {
       var d = draftById(S.draft);
+      if (inPreview()) { toast('Downloads are off inside this preview. Open the demo in its own browser tab to download.'); return; }
       try {
         var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿', docHTML(d)], { type: 'application/msword' })); a.download = d.title + '.doc';
         document.body.appendChild(a); a.click(); a.remove(); toast('Downloaded ' + d.title + '.doc. Blanks stay highlighted.');
@@ -926,6 +929,7 @@ dialog .share-row select { border: 1px solid var(--line); border-radius: 8px; pa
     },
     'draft-pdf': function () {
       // the PDF is the browser's print-to-PDF of the draft alone; the product renders it on the server
+      if (inPreview()) { toast('Printing is off inside this preview. Open the demo in its own browser tab to save a PDF.'); return; }
       var f = document.createElement('iframe'); f.style.cssText = 'position:fixed;width:0;height:0;border:0'; document.body.appendChild(f);
       try { f.contentDocument.write(docHTML(draftById(S.draft))); f.contentDocument.close(); f.contentWindow.focus(); f.contentWindow.print(); toast('Choose "Save as PDF" in the print window.'); }
       catch (e) { toast('Printing is blocked here. Open the demo in its own tab to save a PDF.'); }
