@@ -262,6 +262,7 @@ dialog .lead { font-size: 14px; color: var(--soft); }
       ['Registration Act, 1908', 'Land', 7, '7 Mar 2027'], ['Non-Agricultural Tenancy Act, 1949', 'Land', 3, '7 Mar 2027'], ['Ministry of Land circulars (42 documents)', 'Land', 42, '5 Mar 2027']
     ],
     areas: [{ name: 'Land', state: 'Live', on: true }, { name: 'Tenancy', state: 'Being prepared', on: false }, { name: 'Succession', state: 'Planned', on: false }],
+    templates: [['Memo of appeal (civil)', 'Bangla, English', 3, 'Adv. Kamal Uddin · 2 Mar 2027', 41], ['Legal notice', 'Bangla, English', 5, 'Adv. Sharmin Sultana · 1 Mar 2027', 96], ['Tenancy agreement', 'Bangla, English', 2, 'Adv. Kamal Uddin · 24 Feb 2027', 23]],
     uploads: [],
     handoffs: [
       { ref: 'LA-1031', q: 'Tenant refuses to leave after the lease ended', district: 'Dhaka', contact: 'phone', user: 'Delta Garments', ws: 'Business', when: '2027-03-07T08:30', status: 'New' },
@@ -368,7 +369,7 @@ dialog .lead { font-size: 14px; color: var(--soft); }
 
   V.library = function () {
     var t = curTab('library', 'updates'), h = head('Law library', 'The law the assistant answers from. Nothing changes for users until you approve it, and old versions are kept so dated questions still work.', '<button class="btn pri" data-act="upload">' + ic('upload') + 'Add a document</button>')
-      + tabs('library', [['updates', 'Updates to approve (' + D.updates.length + ')'], ['acts', 'Acts and documents'], ['areas', 'Areas of law']]);
+      + tabs('library', [['updates', 'Updates to approve (' + D.updates.length + ')'], ['acts', 'Acts and documents'], ['templates', 'Drafting templates'], ['areas', 'Areas of law']]);
     if (t === 'updates') {
       var up = D.updates.concat(D.uploads.filter(function (u) { return u.busy; }));
       if (!up.length) return h + '<div class="card empty">No updates waiting. The nightly check runs at 02:00.</div>';
@@ -386,6 +387,9 @@ dialog .lead { font-size: 14px; color: var(--soft); }
     }
     if (t === 'acts') return h + '<div class="tbl-wrap"><table><thead><tr><th>Act or document</th><th>Area</th><th>Versions kept</th><th>Last checked</th></tr></thead><tbody>'
       + D.acts.map(function (a) { return '<tr><td>' + esc(a[0]) + '</td><td>' + a[1] + '</td><td class="tnum">' + a[2] + '</td><td>' + a[3] + '</td></tr>'; }).join('') + '</tbody></table></div>';
+    if (t === 'templates') return h + '<div class="tbl-wrap"><table><thead><tr><th>Template</th><th>Languages</th><th>Version</th><th>Approved by</th><th>Drafts this week</th></tr></thead><tbody>'
+      + D.templates.map(function (a) { return '<tr><td>' + esc(a[0]) + '</td><td>' + a[1] + '</td><td class="tnum">v' + a[2] + '</td><td>' + esc(a[3]) + '</td><td class="tnum">' + a[4] + '</td></tr>'; }).join('')
+      + '</tbody></table></div><p style="font-size:13px;color:var(--soft);margin-top:10px">Templates ship with the product. A new version reaches users only after an advocate approves it; drafts already made keep the version they were written from.</p>';
     return h + '<div class="sec">' + D.areas.map(function (a, i) {
       return '<div class="line"><span>' + a.name + '<small>' + a.state + '</small></span>' + sw('area' + i, a.on, 'Answer ' + a.name + ' questions') + '</div>';
     }).join('') + '<p class="hint" style="margin:0">Turning an area on lets the assistant answer from it. Turn it on only after its quality check passes.</p></div>';

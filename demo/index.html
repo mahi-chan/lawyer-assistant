@@ -26,6 +26,8 @@
   --file-ink: #33405a;
   --accent: #c8102e;
   --accent-bg: #fbeef0;
+  --blank-bg: #fff1c2;
+  --blank-ink: #5c4300;
   --side-fg: #e6ede8;
   --side-soft: #9fb5a8;
   --side-hover: #173a2a;
@@ -148,6 +150,40 @@ h1, h2, h3, p { margin: 0; }
 .send { margin-left: auto; width: 36px; height: 36px; border: 0; border-radius: 11px; background: var(--green); color: #fff; display: grid; place-items: center; }
 .send:disabled { background: var(--green-2); cursor: default; }
 .disc { max-width: 780px; margin: 8px auto 0; text-align: center; font-size: 12px; color: var(--soft); }
+.dbtn { display: inline-flex; align-items: center; gap: 6px; border: 0; background: var(--paper); border-radius: 9px; padding: 6px 10px; font-size: 13px; color: var(--soft); }
+.dbtn:hover { background: var(--paper-2); color: var(--ink); }
+.dbtn svg, .chip svg { width: 15px; height: 15px; }
+.quick { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 14px; font-size: 13px; color: var(--soft); }
+.chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--white); border-radius: 999px; padding: 6px 12px; font-size: 13px; color: var(--ink); }
+.chip:hover { border-color: var(--green-2); background: var(--green-3); }
+
+/* ---------- Draft canvas: the draft opens beside the chat, like an artifact ---------- */
+.dcard { display: flex; align-items: center; gap: 12px; width: 100%; max-width: 440px; margin-top: 14px; text-align: left; border: 1px solid var(--line); background: var(--white); border-radius: 12px; padding: 12px 14px; font: 14px/1.4 var(--ui); }
+.dcard:hover { border-color: var(--green); }
+.dcard .dic { width: 38px; height: 38px; border-radius: 9px; background: var(--green-3); color: var(--green-ink); display: grid; place-items: center; flex: none; }
+.dcard .dt { min-width: 0; }
+.dcard small { display: block; color: var(--soft); font-size: 12.5px; }
+.dcard .go { margin-left: auto; color: var(--green-ink); font-weight: 600; }
+.app.drafting { grid-template-columns: 272px minmax(340px, 1fr) minmax(0, 1.25fr); }
+.canvas { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--paper-2); border-left: 1px solid var(--line); }
+.canvas[hidden] { display: none; }
+.cv-h { height: 52px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 12px 0 16px; background: var(--white); border-bottom: 1px solid var(--line); }
+.cv-t { min-width: 0; flex: 1; }
+.cv-t b, .cv-t small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cv-t small { color: var(--soft); font-size: 12px; }
+.cv-note { flex: none; display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; padding: 8px 16px; font-size: 12.5px; color: var(--soft); background: var(--white); border-bottom: 1px solid var(--line); }
+.cv-note .k { display: inline-flex; gap: 6px; align-items: center; }
+.cv-scroll { flex: 1; overflow-y: auto; min-height: 0; padding: 24px; }
+.paper { max-width: 720px; margin: 0 auto; background: var(--white); padding: 48px 56px; border-radius: 4px; box-shadow: 0 1px 3px rgba(13, 42, 28, .14); font: 16px/1.75 var(--read); outline: none; }
+.paper:focus-visible { box-shadow: 0 0 0 2px var(--green); }
+.paper h4 { margin: 18px 0 6px; text-align: center; font: 600 15px/1.4 var(--read); letter-spacing: .06em; text-transform: uppercase; }
+.paper h4:first-child { margin-top: 0; }
+.paper p { margin: 0 0 12px; }
+.paper .c { text-align: center; }
+.paper ol { margin: 0 0 12px; padding-left: 24px; }
+.paper li { margin-bottom: 8px; }
+.fl { border-bottom: 1.5px dotted var(--green); }
+.bl { background: var(--blank-bg); color: var(--blank-ink); border-radius: 3px; padding: 0 3px; }
 
 /* ---------- Pages ---------- */
 .page { max-width: 1000px; margin: 0 auto; padding: 28px 24px 48px; }
@@ -260,6 +296,16 @@ dialog .share-row select { border: 1px solid var(--line); border-radius: 8px; pa
   .invite button { grid-column: 1 / -1; }
   .mem { grid-template-columns: auto minmax(0, 1fr) auto; }
   .mem select { grid-column: 2; justify-self: start; }
+  .cv-scroll { padding: 12px; }
+  .paper { padding: 28px 22px; font-size: 15px; }
+  .cv-h .btn .lb { display: none; }
+}
+@media (max-width: 1100px) {
+  .app.drafting { grid-template-columns: 272px minmax(0, 1fr); }
+  .canvas { position: fixed; inset: 0; z-index: 45; }
+}
+@media (max-width: 860px) {
+  .app.drafting { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {
   .drawer, .side, .toast { transition: none; }
@@ -275,6 +321,7 @@ dialog .share-row select { border: 1px solid var(--line); border-radius: 8px; pa
     <div class="view" id="view"></div>
     <div class="dock" id="dock"></div>
   </div>
+  <aside class="canvas" id="canvas" aria-label="Draft" hidden></aside>
 </div>
 
 <aside class="drawer" id="drawer" aria-label="Source" inert>
@@ -298,7 +345,8 @@ dialog .share-row select { border: 1px solid var(--line); border-radius: 8px; pa
     users: 'M9 11a4 4 0 100-8 4 4 0 000 8zM2 21v-1a6 6 0 0112 0v1M16 3.5a4 4 0 010 7M22 21v-1a6 6 0 00-4-5.6',
     out: 'M15 4h4v16h-4M10 17l5-5-5-5M15 12H3', shield: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z',
     trash: 'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3', swap: 'M4 8h14l-3-3M20 16H6l3 3', pen: 'M4 20h4L19 9l-4-4L4 16zM13 7l4 4',
-    move: 'M3 8h18v12H3zM9 8V5h6v3M10 14h6M13 11l3 3-3 3', check: 'M5 12l5 5 9-10', scale: 'M12 4v16M6 20h12M4 8h16M7 8l-3 6h6zM17 8l-3 6h6z'
+    move: 'M3 8h18v12H3zM9 8V5h6v3M10 14h6M13 11l3 3-3 3', check: 'M5 12l5 5 9-10', scale: 'M12 4v16M6 20h12M4 8h16M7 8l-3 6h6zM17 8l-3 6h6z',
+    clock: 'M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 2', dl: 'M12 4v11M7 10l5 5 5-5M5 20h14'
   };
   function ic(n) { return '<svg viewBox="0 0 24 24" aria-hidden="true"' + (n === 'dots' ? ' class="dots"' : '') + '><path d="' + I[n] + '"/></svg>'; }
   function plural(n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); }
@@ -317,6 +365,58 @@ dialog .share-row select { border: 1px solid var(--line); border-radius: 8px; pa
     sat143: { s: 'SA&T Act 1950, s. 143', act: 'State Acquisition and Tenancy Act, 1950', sec: '143', h: 'Maintenance of the record-of-rights' }
   };
   var DISTRICTS = ['Dhaka', 'Gazipur', 'Narayanganj', 'Chattogram', 'Sylhet', 'Khulna', 'Rajshahi', 'Barishal', 'Rangpur', 'Mymensingh'];
+
+  // Built-in drafting templates. Users ask for a document; the product picks the template and fills it.
+  // Anything not in the matter or the user's profile becomes a highlighted blank, never a guess.
+  function F(v, label) { return v ? '<span class="fl" title="Filled from the matter or your profile">' + esc(v) + '</span>' : B(label); }
+  function B(label) { return '<mark class="bl" title="Not in the matter files. Fill this in.">[' + esc(label) + ']</mark>'; }
+  function fileIn(m, re) { return m && m.files.filter(function (f) { return re.test(f.name); })[0]; }
+  function signer() { return '<p>' + F(S.user.name) + '<br>Advocate, ' + F(S.workspaces[S.ws].name) + '</p>'; }
+  var TPL = {
+    appeal: { name: 'Memo of appeal (civil)', title: 'Memo of appeal', bn: 'আপিল মেমোর', re: /appeal|আপিল/i,
+      build: function (m, used) {
+        var court = m && m.court !== 'Not filed' ? m.court : '', deed = fileIn(m, /deed/i), mu = fileIn(m, /mutation/i);
+        if (deed) used.push({ f: deed.name, p: 1 }); if (mu) used.push({ f: mu.name, p: 2 });
+        return '<h4>Memorandum of appeal</h4><p class="c">In the Court of the District Judge, ' + F(court.split(',').pop().trim(), 'district') + '</p><p class="c">Civil Appeal No. ____ of 2027</p>'
+          + '<p class="c">Arising out of ' + F(m && m.caseNo !== '—' ? m.caseNo : '', 'suit number') + ', decided by the ' + F(court, 'trial court') + '</p>'
+          + '<p>' + F(m && m.client, 'name of the appellant') + ' … Appellant</p><p class="c">versus</p><p>' + B('name and address of the respondent') + ' … Respondent</p>'
+          + '<p>Memorandum of appeal under section 96 of the Code of Civil Procedure, 1908, against the judgment and decree dated ' + B('date of the decree') + ' passed in the above suit.</p>'
+          + '<p>The appellant, being aggrieved by the said judgment and decree, prefers this appeal on the following, among other,</p><h4>Grounds</h4><ol>'
+          + '<li>For that the court below failed to consider that the appellant bought the suit land by ' + (deed ? F('a deed of sale registered in 2019') : B('how the appellant holds the land')) + '.</li>'
+          + '<li>For that the court below did not consider ' + (mu ? F('the appellant\'s application for mutation of the record-of-rights') : B('further ground')) + '.</li>'
+          + '<li>For that the judgment and decree are otherwise bad in law and in fact, and are liable to be set aside.</li></ol>'
+          + '<p>Wherefore the appellant prays that this appeal be allowed, the judgment and decree of the court below be set aside, and costs be awarded.</p>'
+          + '<p>Valuation of the appeal: Tk. ' + B('valuation') + '</p>' + signer();
+      },
+      extra: { at: '<li>For that the judgment and decree are otherwise', html: '<li>For that the court below did not consider the evidence of possession produced by the appellant.</li>', note: 'I added a ground on the evidence of possession.' } },
+    notice: { name: 'Legal notice', title: 'Legal notice', bn: 'লিগ্যাল নোটিশের', re: /notice|নোটিশ/i,
+      build: function (m, used) {
+        var deed = fileIn(m, /deed/i), kh = fileIn(m, /khatian/i), client = m && m.client;
+        if (deed) used.push({ f: deed.name, p: 1 }); if (kh) used.push({ f: kh.name, p: 1 });
+        return '<h4>Legal notice</h4><p>Date: ' + B('date') + '</p><p>To<br>' + B('name and address of the recipient') + '</p>'
+          + '<p>Subject: Notice on behalf of ' + F(client, 'client') + (m ? ' concerning ' + F(m.title) : '') + '</p>'
+          + '<p>Under instructions from and on behalf of my client, ' + F(client, 'client') + ', I serve you with this notice as follows:</p><ol>'
+          + '<li>My client ' + (deed ? F('owns the land described below, bought by a deed of sale registered in 2019') : B('my client\'s position')) + '.</li>'
+          + '<li>It has come to my client\'s notice that you have ' + B('what the recipient did') + '.</li>'
+          + '<li>You are asked to ' + B('what the recipient must do') + ' within ' + B('number') + ' days of receiving this notice, failing which my client will take legal action at your risk as to costs.</li></ol>'
+          + (kh ? '<p>Schedule of land: ' + F('Khatian No. 412, Gazipur') + ', ' + B('mouza, dag numbers and area') + '</p>' : '') + signer();
+      },
+      extra: { at: '</ol>', html: '<li>This notice is without prejudice to any other right or remedy available to my client.</li>', note: 'I added a paragraph keeping your client\'s other rights open.' } },
+    tenancy: { name: 'Tenancy agreement', title: 'Tenancy agreement', bn: 'ভাড়াটিয়া চুক্তির', re: /tenan|lease|rent|ভাড়া/i,
+      build: function (m, used) {
+        var lease = fileIn(m, /lease/i); if (lease) used.push({ f: lease.name, p: 1 });
+        return '<h4>Tenancy agreement</h4><p>This agreement is made on ' + B('date') + ' between ' + B('name and address of the landlord') + ' (the Landlord) and ' + F(m && m.client, 'name of the tenant') + ' (the Tenant).</p><ol>'
+          + '<li>Premises: ' + B('address and floor area') + '.</li><li>Term: ' + B('number') + ' years from ' + B('start date') + '.</li>'
+          + '<li>Rent: Tk. ' + B('monthly rent') + ' a month, paid by the ' + B('day') + ' of each month.</li>'
+          + '<li>Either party may end this agreement by giving ' + B('notice period') + ' written notice.</li></ol>'
+          + '<p>Signed by the Landlord and the Tenant in the presence of two witnesses.</p>' + signer();
+      },
+      extra: { at: '</ol>', html: '<li>The Tenant shall not sublet the premises without the Landlord\'s written consent.</li>', note: 'I added a clause on subletting.' } }
+  };
+  function blanks(html) { return (html.match(/<mark class="bl"[^>]*>\[[^\]]*\]<\/mark>/g) || []).length; }
+  function last(d) { return d.versions[d.versions.length - 1]; }
+  function draftById(did) { return S.drafts.filter(function (d) { return d.id === did; })[0]; }
+  function card(d) { return '<button class="dcard" data-act="open-draft" data-id="' + d.id + '"><span class="dic">' + ic('file') + '</span><span class="dt"><b>' + esc(d.title) + '</b><small>' + esc(TPL[d.tpl].name) + ' template · opens beside the chat</small></span><span class="go">Open</span></button>'; }
 
   var uid = 0; function id() { return 'x' + (++uid); }
   var S = {
@@ -342,7 +442,7 @@ dialog .share-row select { border: 1px solid var(--line); border-radius: 8px; pa
       { id: 'm3', ws: 'firm', title: 'Inheritance shares, Sylhet', client: 'Family of the late owner', area: 'Succession', court: 'Not filed', caseNo: '—', next: '—',
         share: {}, instructions: '', files: [{ name: 'Family tree.jpg', meta: 'Image · OCR done' }, { name: 'Khatian scan.pdf', meta: 'Scan · OCR done' }] }
     ],
-    chats: []
+    chats: [], drafts: [], draft: null
   };
 
   // ---------- mocked answer engine ----------
@@ -353,10 +453,31 @@ dialog .share-row select { border: 1px solid var(--line); border-radius: 8px; pa
     var find = function (re) { for (var i = 0; i < files.length; i++) if (re.test(files[i].name)) return files[i]; };
     var where = 'Searched land law' + (m ? ' and ' + plural(files.length, 'matter file') : '');
     var r = { kind: 'ok', src: src };
+    var wantsDraft = /\b(draft|prepare)\b|খস(?:\u09DC|\u09A1\u09BC)া/i.test(q), dr = S.drafts.filter(function (d) { return d.chatId === chat.id; }).pop();
     if (/arrest|police|bail|criminal|\bFIR\b|warrant|গ্রেফতার|গ্রেপ্তার|জামিন|পুলিশ/i.test(q)) {
       r.kind = 'escalate'; r.status = 'Urgent topic · lawyer handoff';
       r.html = bn ? '<p>বিষয়টি জরুরি এবং ফৌজদারি আইনের, তাই সাধারণ তথ্যের বদলে আজই একজন আইনজীবীর সঙ্গে কথা বলুন। পুলিশের দেওয়া কাগজপত্র সংরক্ষণ করুন।</p>'
         : '<p>This sounds urgent and involves criminal law, so it needs a lawyer rather than general information. Please speak to an advocate today, and keep any papers the police gave you.</p>';
+    } else if (dr && !wantsDraft && /\b(add|change|rewrite|reword|shorten|strengthen|stronger|update|include|insert|amend)\b/i.test(q)) {
+      var x = TPL[dr.tpl].extra, was = last(dr).html;
+      r.draftId = dr.id; r.status = 'Editing the draft · ' + TPL[dr.tpl].name + ' template';
+      if (was.indexOf(x.html) > -1 || was.indexOf(x.at) < 0) r.html = '<p>That change is beyond this demo\'s samples. Click into the draft and edit it directly; your edits are kept as a new version.</p>' + card(dr);
+      else { dr.versions.push({ label: 'Changed by the assistant', html: was.replace(x.at, x.html + x.at) }); r.html = '<p>' + x.note + ' This is version ' + dr.versions.length + '; earlier versions are kept under Versions.</p>' + card(dr); }
+    } else if (wantsDraft) {
+      var key = Object.keys(TPL).filter(function (k) { return TPL[k].re.test(q); })[0];
+      if (!key) {
+        r.kind = 'clarify'; r.status = 'Drafting · choose a template';
+        r.html = '<p>Which document do you need? I can draft from these built-in templates: memo of appeal, legal notice and tenancy agreement.</p><p class="ask-back">For example: "Draft a legal notice".</p>';
+      } else {
+        var t = TPL[key], used = [], d = { id: id(), chatId: chat.id, tpl: key, title: t.title + (m ? ', ' + m.title : ''), versions: [] };
+        d.versions.push({ label: 'Drafted by the assistant', html: t.build(m, used) });
+        S.drafts.push(d); used.forEach(function (u) { src.push(u); });
+        var nb = blanks(d.versions[0].html);
+        r.draftId = d.id; r.status = 'Used the built-in ' + t.name + ' template' + (used.length ? ' · filled from ' + plural(used.length, 'matter file') : '');
+        r.html = (bn ? '<p>' + (m ? 'এই ম্যাটারের তথ্য দিয়ে ' : '') + t.bn + ' খসড়া তৈরি হয়েছে। এই ডেমোর নমুনা খসড়াটি ইংরেজিতে; প্রোডাক্টে বাংলা টেমপ্লেটও থাকবে।</p>'
+          : '<p>Here is a draft ' + t.title.toLowerCase() + ' from the built-in ' + t.name + ' template' + (m ? ', filled from this matter' : '') + '.'
+            + (nb ? ' ' + plural(nb, 'detail') + (nb === 1 ? ' is' : ' are') + ' not in ' + (m ? 'the matter files' : 'this chat') + ', so ' + (nb === 1 ? 'it is' : 'they are') + ' left as highlighted blanks for you to fill.' : '') + '</p>') + card(d);
+      }
     } else if (/নামজারি|mutation|record.of.rights|খতিয়ান/i.test(q)) {
       var mu = find(/mutation/i);
       r.html = bn ? '<p>নামজারি মানে খতিয়ানে নতুন মালিকের নাম তোলা, যা রেকর্ড-অব-রাইটস হালনাগাদের বিধান অনুযায়ী হয় ' + cite('sat143', src) + '। ' + (mu ? 'এই ম্যাটারে নামজারির আবেদনের কপি আছে ' + fcite(mu, 2, src) + '। ' : '') + 'শুনানির তারিখ জানালে পরের ধাপ বলা যাবে।</p>'
@@ -433,6 +554,7 @@ dialog .share-row select { border: 1px solid var(--line); border-radius: 8px; pa
     return '<div class="composer"><textarea id="q" rows="1" aria-label="Your question" placeholder="' + (ctx ? 'Ask about this matter, in Bangla or English' : 'Ask about Bangladeshi law, in Bangla or English') + '"></textarea>'
       + '<div class="c-row"><button class="ib" data-act="attach" aria-label="Attach files">' + ic('clip') + '</button>'
       + '<div class="seg" role="group" aria-label="Answer style"><button data-act="mode" data-mode="simple" aria-pressed="' + (S.mode === 'simple') + '">Simple</button><button data-act="mode" data-mode="pro" aria-pressed="' + (S.mode === 'pro') + '">Professional</button></div>'
+      + '<button class="dbtn" data-act="draft-menu" aria-haspopup="menu">' + ic('pen') + 'Draft</button>'
       + '<span class="ctx">' + (ctx ? 'Matter: ' + esc(ctx.title) : 'Land law library') + '</span>'
       + '<button class="send" id="send" data-act="send" aria-label="Send" disabled>' + ic('send') + '</button></div></div>'
       + '<p class="disc">General legal information, not legal advice. Law as held on 1 Mar 2027.</p>';
@@ -463,7 +585,7 @@ dialog .share-row select { border: 1px solid var(--line); border-radius: 8px; pa
   function render() {
     var v = S.view;
     $('#app').classList.toggle('bare', v.name === 'signin');
-    if (v.name === 'signin') { renderSignin(); return; }
+    if (v.name === 'signin') { renderCanvas(); renderSignin(); return; }
     renderSide();
     var top = '<button class="ib menu-btn" data-act="menu" aria-label="Open menu">' + ic('menu') + '</button>', body = '', dock = '';
     if (v.name === 'home') {
@@ -491,10 +613,13 @@ dialog .share-row select { border: 1px solid var(--line); border-radius: 8px; pa
         }).join('') + '</div>' : '<p class="empty">' + (wsMatters().length ? 'No matter matches that search.' : 'No matters yet. Create one to keep a case\'s files and chats together.') + '</p>') + '</div>';
     } else if (v.name === 'matter') {
       var mt = matterById(v.id), chats = S.chats.filter(function (c) { return c.matterId === mt.id; });
+      var drafts = S.drafts.filter(function (d) { var c = chatById(d.chatId); return c && c.matterId === mt.id; });
       top += '<button class="crumb" data-act="matters">Matters</button><span aria-hidden="true">/</span><h2>' + esc(mt.title) + '</h2><div class="right"><button class="btn" data-act="share" data-id="' + mt.id + '">' + ic('share') + 'Share</button><button class="ib" data-act="matter-menu" data-id="' + mt.id + '" aria-haspopup="menu" aria-label="Matter options">' + ic('dots') + '</button></div>';
       body = '<div class="mv"><div><h1>' + esc(mt.title) + '</h1><div class="meta"><span>' + esc(mt.client) + '</span><span>' + esc(mt.caseNo) + '</span><span class="pill">' + esc(mt.area) + '</span><span class="pill' + (sharedCount(mt) ? '' : ' grey') + '">' + (sharedCount(mt) ? 'Shared with ' + sharedCount(mt) : 'Private') + '</span></div>'
         + composer(mt)
+        + '<div class="quick">Draft from a template:' + Object.keys(TPL).map(function (k) { return '<button class="chip" data-act="pick-tpl" data-k="' + k + '">' + ic('pen') + TPL[k].title + '</button>'; }).join('') + '</div>'
         + '<p class="list-h">Chats in this matter</p>' + (chats.length ? chats.map(function (c) { return '<button class="rowlink" data-act="chat" data-id="' + c.id + '"><span>' + esc(c.title) + '</span><small>' + esc(c.when) + '</small></button>'; }).join('') : '<p class="empty">No chats yet. Ask a question above to start one.</p>')
+        + (drafts.length ? '<p class="list-h">Drafts in this matter</p>' + drafts.map(function (d) { return '<button class="rowlink" data-act="open-draft" data-id="' + d.id + '"><span>' + esc(d.title) + '</span><small>Version ' + d.versions.length + '</small></button>'; }).join('') : '')
         + '</div><div>'
         + '<section class="panel"><h3>Instructions</h3><textarea id="instr" aria-label="Matter instructions" placeholder="How should the assistant work on this matter?">' + esc(mt.instructions) + '</textarea><div class="right" style="justify-content:space-between;margin:0"><span class="note">Shapes answers; never cited as law.</span><button class="btn" data-act="save-instr">Save</button></div></section>'
         + '<section class="panel"><h3>Files <button class="btn" data-act="attach">' + ic('plus') + 'Add</button></h3>' + (mt.files.length ? mt.files.map(function (fl, i) {
@@ -534,6 +659,33 @@ dialog .share-row select { border: 1px solid var(--line); border-radius: 8px; pa
     $('#top').innerHTML = top; $('#view').innerHTML = body; $('#dock').innerHTML = dock; $('#dock').hidden = !dock;
     var view = $('#view'); if (v.name === 'chat') view.scrollTop = view.scrollHeight; else view.scrollTop = 0;
     bindComposer();
+    renderCanvas();
+  }
+
+  // Rebuilds the editor only when the draft or its version count changes, so typing keeps the caret.
+  function renderCanvas() {
+    var d = S.draft && draftById(S.draft), cv = $('#canvas');
+    $('#app').classList.toggle('drafting', !!d); cv.hidden = !d;
+    if (!d) { cv.innerHTML = ''; cv.dataset.key = ''; return; }
+    var key = d.id + ':' + d.versions.length;
+    if (cv.dataset.key !== key) {
+      cv.dataset.key = key;
+      cv.innerHTML = '<header class="cv-h"><div class="cv-t" id="cv-t"></div>'
+        + '<button class="btn" data-act="draft-versions" aria-haspopup="menu" aria-label="Versions">' + ic('clock') + '<span class="lb">Versions</span></button>'
+        + '<button class="btn pri" data-act="draft-download" aria-haspopup="menu">' + ic('dl') + 'Download</button>'
+        + '<button class="ib" data-act="close-draft" aria-label="Close draft">' + ic('x') + '</button></header>'
+        + '<p class="cv-note"><span>Draft for advocate review. Click anywhere in it to edit.</span><span class="k"><span class="fl">Filled from the matter</span></span><span class="k"><mark class="bl">[Blank]</mark><span id="cv-bl"></span></span></p>'
+        + '<div class="cv-scroll"><article class="paper" id="paper" contenteditable="true" spellcheck="false" aria-label="Draft document, editable">' + last(d).html + '</article></div>';
+    }
+    canvasHead(d);
+  }
+  function canvasHead(d) {
+    var n = blanks(last(d).html);
+    $('#cv-t').innerHTML = '<b>' + esc(d.title) + '</b><small>' + esc(TPL[d.tpl].name) + ' template · version ' + d.versions.length + ' · ' + esc(last(d).label) + '</small>';
+    $('#cv-bl').textContent = n ? plural(n, 'blank') + ' left to fill' : 'no blanks left';
+  }
+  function docHTML(d) {
+    return '<html><head><meta charset="utf-8"><title>' + esc(d.title) + '</title><style>body{font:12pt/1.6 "Times New Roman",serif;max-width:16cm;margin:2cm auto}h4{text-align:center;text-transform:uppercase;letter-spacing:.05em}.c{text-align:center}.bl{background:#fff1c2}</style></head><body>' + last(d).html + '</body></html>';
   }
   function fld(label, input) { return '<label class="field">' + label + input + '</label>'; }
   function sel(idv, opts, val) { return '<select id="' + idv + '">' + opts.map(function (o) { var k = Array.isArray(o) ? o[0] : o, t = Array.isArray(o) ? o[1] : o; return '<option value="' + esc(k) + '"' + (k === val ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('') + '</select>'; }
@@ -555,7 +707,10 @@ dialog .share-row select { border: 1px solid var(--line); border-radius: 8px; pa
     sync();
   }
 
-  function go(view) { S.view = view; $('#app').classList.remove('nav-open'); closeDrawer(); hideMenu(); render(); }
+  function go(view) {
+    var d = S.draft && draftById(S.draft); if (d && !(view.name === 'chat' && view.id === d.chatId)) S.draft = null;
+    S.view = view; $('#app').classList.remove('nav-open'); closeDrawer(); hideMenu(); render();
+  }
 
   // ---------- send + streamed reply ----------
   function send(text) {
@@ -578,7 +733,12 @@ dialog .share-row select { border: 1px solid var(--line); border-radius: 8px; pa
         el.innerHTML = out; view.scrollTop = view.scrollHeight;
         if (i < parts.length) setTimeout(tick, 40); else finish();
       })();
-      function finish() { bot.streaming = false; S.busy = false; if (S.view.name === 'chat' && S.view.id === c.id) render(); }
+      function finish() {
+        bot.streaming = false; S.busy = false;
+        if (S.view.name !== 'chat' || S.view.id !== c.id) return;
+        if (bot.draftId && matchMedia('(min-width: 1101px)').matches) S.draft = bot.draftId;
+        render();
+      }
     }, reduce ? 0 : 900);
   }
 
@@ -745,6 +905,33 @@ dialog .share-row select { border: 1px solid var(--line); border-radius: 8px; pa
         }).join('') + '<button type="button" class="btn" data-act="copy-link" style="justify-self:start">' + ic('copy') + 'Copy link</button>',
         onSubmit: function (f) { m.share = {}; f.querySelectorAll('[data-share]').forEach(function (s) { if (s.value) m.share[s.dataset.share] = s.value; }); render(); toast(sharedCount(m) ? 'Shared with ' + plural(sharedCount(m), 'person') .replace('persons', 'people') + '.' : 'This matter is now private.'); } });
     },
+    'draft-menu': function (b) {
+      menu(b, '<div class="who"><b>Draft from a template</b>Built-in templates, reviewed by an advocate</div>' + Object.keys(TPL).map(function (k) { return mi('pick-tpl', 'file', TPL[k].name, ' data-k="' + k + '"'); }).join(''));
+    },
+    'pick-tpl': function (b) { send('Draft a ' + TPL[b.dataset.k].title.toLowerCase()); },
+    'open-draft': function (b) { var d = draftById(b.dataset.id); S.draft = d.id; if (S.view.name === 'chat' && S.view.id === d.chatId) render(); else go({ name: 'chat', id: d.chatId }); },
+    'close-draft': function () { S.draft = null; render(); },
+    'draft-versions': function (b) {
+      var d = draftById(S.draft), n = d.versions.length;
+      menu(b, '<div class="who"><b>Versions</b>Every version is kept. Restoring copies it as the newest.</div>' + d.versions.map(function (x, i) { return i === n - 1 ? mi('close-menu', 'check', 'Version ' + (i + 1) + ' · ' + esc(x.label) + ' (current)') : mi('restore-ver', 'clock', 'Restore version ' + (i + 1) + ' · ' + esc(x.label), ' data-i="' + i + '"'); }).reverse().join(''));
+    },
+    'restore-ver': function (b) { var d = draftById(S.draft), i = +b.dataset.i; d.versions.push({ label: 'Restored version ' + (i + 1), html: d.versions[i].html }); render(); toast('Version ' + (i + 1) + ' restored as version ' + d.versions.length + '.'); },
+    'draft-download': function (b) { menu(b, mi('draft-word', 'file', 'Word document') + mi('draft-pdf', 'file', 'PDF')); },
+    'draft-word': function () {
+      var d = draftById(S.draft);
+      try {
+        var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿', docHTML(d)], { type: 'application/msword' })); a.download = d.title + '.doc';
+        document.body.appendChild(a); a.click(); a.remove(); toast('Downloaded ' + d.title + '.doc. Blanks stay highlighted.');
+      } catch (e) { toast('Downloads are blocked here. Open the demo in its own tab to download.'); }
+    },
+    'draft-pdf': function () {
+      // the PDF is the browser's print-to-PDF of the draft alone; the product renders it on the server
+      var f = document.createElement('iframe'); f.style.cssText = 'position:fixed;width:0;height:0;border:0'; document.body.appendChild(f);
+      try { f.contentDocument.write(docHTML(draftById(S.draft))); f.contentDocument.close(); f.contentWindow.focus(); f.contentWindow.print(); toast('Choose "Save as PDF" in the print window.'); }
+      catch (e) { toast('Printing is blocked here. Open the demo in its own tab to save a PDF.'); }
+      setTimeout(function () { f.remove(); }, 60000);
+    },
+    'close-menu': hideMenu,
     'copy-link': function () { try { navigator.clipboard.writeText('https://app.example/matters/' + S.view.id).then(function () { toast('Link copied. Only people with access can open it.'); }, function () { toast('Copy is blocked here.'); }); } catch (e) { toast('Copy is blocked here.'); } },
     'remove-member': function (b) {
       var p = S.members[+b.dataset.i];
@@ -760,6 +947,13 @@ dialog .share-row select { border: 1px solid var(--line); border-radius: 8px; pa
     if (!b) return;
     if (b.closest('#pop')) hideMenu();
     var fn = A[b.dataset.act]; if (fn) fn(b);
+  });
+  document.addEventListener('input', function (e) {
+    if (e.target.id !== 'paper') return;
+    // the first hand edit after the assistant's version starts a new "Your edits" version; later keystrokes update it
+    var d = draftById(S.draft), html = e.target.innerHTML;
+    if (last(d).mine) last(d).html = html; else { d.versions.push({ label: 'Your edits', html: html, mine: true }); $('#canvas').dataset.key = d.id + ':' + d.versions.length; }
+    canvasHead(d);
   });
   document.addEventListener('input', function (e) { if (e.target.id === 'filter') { S.filter = e.target.value; var pos = e.target.selectionStart; render(); var f = $('#filter'); f.focus(); f.setSelectionRange(pos, pos); } });
   document.addEventListener('change', function (e) {
